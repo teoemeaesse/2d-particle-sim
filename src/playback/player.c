@@ -1,12 +1,14 @@
-#include <GL/glut.h>
+#include <GLFW/glfw3.h>
 
+#include "player.h"
 #include "simulation.h"
+
+#include <stdio.h>
 
 typedef struct {
     int x, y;
 } Vec2;
 
-static int window;
 static Vec2 camera = {0, 0};
 static simulation_t * sim;
 
@@ -38,17 +40,9 @@ void render() {
     }
 
     glEnd();
-
-    glutSwapBuffers();
 }
 
-void idle() {
-    update();
-    glutPostRedisplay();
-    glutTimerFunc(1000.0 / sim->settings->fps, idle, 0);
-}
-
-void resize(int w, int h) {
+void resize(GLFWwindow * window, int w, int h) {
 	if(h == 0)
 		h = 1;
 
@@ -61,21 +55,40 @@ void resize(int w, int h) {
     glMatrixMode(GL_MODELVIEW);
 }
 
+void error(int err, const char * description) {
+    fputs(description, stderr);
+}
+
 int main(int argc, char * argv[]) {
     if((sim = load_simulation(argc, argv)) == NULL)
         return -1;
     sim->frame = 0;
+
+    if (!glfwInit())
+        return 1;
     
-    glutInit(&argc, argv);
-    glutInitWindowSize(800, 600);
-    glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE);
-    window = glutCreateWindow("Simulation Player");
+    glfwSetErrorCallback(error);
+    
+    GLFWwindow * window = glfwCreateWindow(WIDTH, HEIGHT, TITLE, NULL, NULL);
+    if(window == NULL) {
+        glfwTerminate();
+        return 1;
+    }
 
-    glutDisplayFunc(render);
-    glutReshapeFunc(resize);
+    glfwSetWindowSizeCallback(window, resize);
+    glfwMakeContextCurrent(window);
 
-    glutTimerFunc(1000.0 / sim->settings->fps, idle, 0);
-    glutMainLoop();
+    resize(window, WIDTH, HEIGHT);
+    while(!glfwWindowShouldClose(window)) {
+        update();
+        render();
+
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+    }
+
+    glfwDestroyWindow(window);
+    glfwTerminate();
 
     unload_simulation(sim);
 
