@@ -2,15 +2,25 @@
 
 #include "player.h"
 #include "simulation.h"
+#include "shader.h"
+#include "common.h"
 
 #include <stdio.h>
+#include <math.h>
+#include <time.h>
 
 typedef struct {
     int x, y;
 } Vec2;
 
+typedef struct {
+    Vec2 dimensions;
+    GLFWwindow * handle;
+} Window;
+
 static Vec2 camera = {0, 0};
 static simulation_t * sim;
+static Window window;
 
 void pan_camera(Vec2 delta) {
     camera.x += delta.x;
@@ -29,28 +39,20 @@ void update() {
 void render() {
     glClear(GL_COLOR_BUFFER_BIT);
     glLoadIdentity();
-
-    glBegin(GL_POINTS);
-
-    int offset = sim->frame * sim->settings->particle_count;
-    for(int i = 0; i < sim->settings->particle_count; i++) {
-        float * particle = sim->particles + offset + i * 5;
-        
-        draw_point(particle[0] + camera.x, particle[1] + camera.y, 1.0, 0.5, 0.2, 0.1);
-    }
-
-    glEnd();
 }
 
-void resize(GLFWwindow * window, int w, int h) {
+void resize(GLFWwindow * handle, int w, int h) {
 	if(h == 0)
 		h = 1;
+    
+    Vec2 new_dimensions = {w, h};
+    window.dimensions = new_dimensions;
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
     
     glViewport(0, 0, w, h);
-    glOrtho(0, w, h, 0, -1, 1);
+    glOrtho(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f);
 	
     glMatrixMode(GL_MODELVIEW);
 }
@@ -69,25 +71,49 @@ int main(int argc, char * argv[]) {
     
     glfwSetErrorCallback(error);
     
-    GLFWwindow * window = glfwCreateWindow(WIDTH, HEIGHT, TITLE, NULL, NULL);
-    if(window == NULL) {
+    Window w = {{WIDTH, HEIGHT}, glfwCreateWindow(WIDTH, HEIGHT, TITLE, NULL, NULL)};
+    window = w;
+
+    if(window.handle == NULL) {
         glfwTerminate();
         return 1;
     }
 
-    glfwSetWindowSizeCallback(window, resize);
-    glfwMakeContextCurrent(window);
+    glfwSetWindowSizeCallback(window.handle, resize);
+    glfwMakeContextCurrent(window.handle);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_BLEND);
+    resize(window.handle, WIDTH, HEIGHT);
 
-    resize(window, WIDTH, HEIGHT);
-    while(!glfwWindowShouldClose(window)) {
+    unsigned int buffer;
+    glGenBuffers(1, &buffer);
+    glBindBuffer(GL_ARRAY_BUFFER, buffer);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 5 * sizeof(float), 0);
+
+    char * v_shader = read_file_as_string("shaders/point.vert"),
+         * f_shader = read_file_as_string("shaders/point.frag");
+
+    unsigned int shader = create_shader(v_shader, f_shader);
+    glUseProgram(shader);
+
+    time_t last_time, current_time;
+    while(!glfwWindowShouldClose(window.handle)) {
         update();
         render();
 
-        glfwSwapBuffers(window);
+        const float u_dims[2] = {(float) window.dimensions.x, (float) window.dimensions.y};
+        glUniform2fv(glGetUniformLocation(shader, "window"), 1, u_dims);
+
+        glBufferData(GL_ARRAY_BUFFER, 5 * sim->settings->particle_count * sizeof(float), sim->particles + sim->settings->particle_count * sim->frame, GL_DYNAMIC_DRAW);
+        glDrawArrays(GL_POINTS, 0, sim->settings->particle_count);
+
+        glfwSwapBuffers(window.handle);
         glfwPollEvents();
     }
 
-    glfwDestroyWindow(window);
+    glfwDestroyWindow(window.handle);
     glfwTerminate();
 
     unload_simulation(sim);

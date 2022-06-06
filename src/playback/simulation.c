@@ -18,7 +18,6 @@ simulation_t * load_simulation(int argc, char * argv[]) {
         return NULL;
     }
 
-
     FILE * fp = fopen(argv[1], "r");
     if(fp == NULL) {
         printf("[load_simulation]: Could not open file _%s_; terminating...\n", argv[1]);

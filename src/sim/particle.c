@@ -22,11 +22,11 @@ void square_initializer(float * particles, int n, int (*initialize_mass)()) {
     int i = 0;
     for(int x = 0; x < l; x++) {
         for(int y = 0; y < l; y++, i++) {
-            particles[i * 5] = x * 4;
-            particles[i * 5 + 1] = y * 4;
-            particles[i * 5 + 2] = 0;
-            particles[i * 5 + 3] = 0;
-            particles[i * 5 + 4] = (*initialize_mass)();
+            set_x(particles, i, x * 4);
+            set_y(particles, i, y * 4);
+            set_xv(particles, i, 0);
+            set_yv(particles, i, 0);
+            set_mass(particles, i, (*initialize_mass)());
 
             if(i == n)
                 return;

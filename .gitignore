@@ -3,3 +3,4 @@ src/playback/10ksquare3600f.sim
 .vscode/dryrun.log
 .vscode/settings.json
 .vscode/targets.log
+src/sim/big.sim
