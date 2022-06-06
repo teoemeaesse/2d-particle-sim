@@ -36,9 +36,18 @@ void update() {
     next_frame(sim);
 }
 
-void render() {
+void render(unsigned int point_shader) {
     glClear(GL_COLOR_BUFFER_BIT);
     glLoadIdentity();
+    
+    const float u_dims[2] = {(float) window.dimensions.x, (float) window.dimensions.y};
+    glUniform2fv(glGetUniformLocation(point_shader, "window"), 1, u_dims);
+
+    glBufferData(GL_ARRAY_BUFFER, 5 * sim->settings->particle_count * sizeof(float), sim->particles + sim->settings->particle_count * sim->frame, GL_DYNAMIC_DRAW);
+    glDrawArrays(GL_POINTS, 0, sim->settings->particle_count);
+
+    glfwSwapBuffers(window.handle);
+    glfwPollEvents();
 }
 
 void resize(GLFWwindow * handle, int w, int h) {
@@ -85,6 +94,8 @@ int main(int argc, char * argv[]) {
     glEnable(GL_BLEND);
     resize(window.handle, WIDTH, HEIGHT);
 
+    glfwSwapInterval(0);
+
     unsigned int buffer;
     glGenBuffers(1, &buffer);
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
@@ -97,20 +108,23 @@ int main(int argc, char * argv[]) {
 
     unsigned int shader = create_shader(v_shader, f_shader);
     glUseProgram(shader);
+    
+    uint64_t delta = 1000000/144/4,
+             acc = 0;
 
-    time_t last_time, current_time;
+    struct timespec start, end;
     while(!glfwWindowShouldClose(window.handle)) {
-        update();
-        render();
+        clock_gettime(CLOCK_MONOTONIC_RAW, &start);
 
-        const float u_dims[2] = {(float) window.dimensions.x, (float) window.dimensions.y};
-        glUniform2fv(glGetUniformLocation(shader, "window"), 1, u_dims);
+        while(acc >= delta) {
+            update();
+            acc -= delta;
+        }
 
-        glBufferData(GL_ARRAY_BUFFER, 5 * sim->settings->particle_count * sizeof(float), sim->particles + sim->settings->particle_count * sim->frame, GL_DYNAMIC_DRAW);
-        glDrawArrays(GL_POINTS, 0, sim->settings->particle_count);
+        render(shader);
 
-        glfwSwapBuffers(window.handle);
-        glfwPollEvents();
+        clock_gettime(CLOCK_MONOTONIC_RAW, &end);
+        acc += (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_nsec - start.tv_nsec) / 1000;
     }
 
     glfwDestroyWindow(window.handle);
