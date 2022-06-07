@@ -6,12 +6,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void print_settings(settings_t * settings) {
-    printf("[settings]: n=%d\n", settings->particle_count);
-    printf("[settings]: t=%d\n", settings->time);
-    printf("[settings]: fps=%d\n", settings->fps);
-}
-
 int init_output_file(settings_t * settings) {
     FILE * fp = fopen(settings->filename, "w");
 
@@ -40,7 +34,7 @@ int main(int argc, char * argv[]) {
         return -1;
     }
 
-    print_settings(settings);
+    LOG_SETTINGS(settings);
 
     init_output_file(settings);
 
@@ -51,7 +45,7 @@ int main(int argc, char * argv[]) {
     int frames = settings->time * settings->fps;
     for(int i = 0; i < frames; i++) {
         export_frame(settings->filename);
-        printf("[frame] %d / %d done.\n", i, frames);
+        LOG_INFO_FRAME(i, frames);
     }
 
     join_workers();
@@ -64,7 +58,7 @@ int main(int argc, char * argv[]) {
 
 int read_settings(settings_t * settings, int argc, char * argv[]) {
     if(argc != 5) {
-        LOG(USAGE);
+        LOG(INFO_USAGE);
         ERROR(ERR_INVALID_ARGC(argc - 1), -1);
     }
     

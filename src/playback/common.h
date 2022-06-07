@@ -12,7 +12,9 @@
 #define ERR_INVALID_ARGC(F) "[error]: Invalid number of arguments (%d).\n", F
 #define ERR_RSIM(R, E) "[error]: Error reading simulation (read %ld kb, expected %ld kb).\n", R, E
 #define ERR_INVALID_FRAMERATE(F) "[error]: Received invalid framerate value (%s).\n", F
-#define USAGE "Usage: ./player [filename] [frames/s]\n"
+#define ERR_SHADER_COMPILE(T) "[error]: Error compiling %s shader.\n", T == GL_VERTEX_SHADER ? "vertex" : "fragment"
+
+#define INFO_USAGE "Usage: ./player [filename] [frames/s]\n"
 
 #define ERROR(M, R) printf(M); return R
 #define LOG(M) printf("%s", M);

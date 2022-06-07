@@ -23,7 +23,7 @@ simulation_t * load_simulation(int argc, char * argv[]) {
 
     FILE * fp = fopen(argv[ARG_FILE], "r");
     if(fp == NULL) {
-        LOG(USAGE);
+        LOG(INFO_USAGE);
         if(fclose(fp) != 0) {
             ERROR(ERR_FCLOSE(argv[ARG_FILE]), NULL);
         }
@@ -31,7 +31,7 @@ simulation_t * load_simulation(int argc, char * argv[]) {
     }
 
     if(!is_integer(argv[ARG_FRAMERATE])) {
-        LOG(USAGE);
+        LOG(INFO_USAGE);
         if(fclose(fp) != 0) {
             ERROR(ERR_FCLOSE(argv[ARG_FILE]), NULL);
         }

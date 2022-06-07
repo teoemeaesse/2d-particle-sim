@@ -13,10 +13,13 @@
 #define ERR_INVALID_PARTICLE_N(N) "[error]: Invalid particle count, please input an integer value (received %s).\n", N
 #define ERR_INVALID_DURATION(T) "[error]: Invalid simulation duration, please input a positive integer value (received %s);\n", T
 #define ERR_INVALID_FRAMERATE(F) "[error]: Received invalid framerate value (%s).\n", F
-#define USAGE "Usage: ./simulator [filename] [particle_count] [t (seconds)] [frames/s]\n"
+#define INFO_USAGE "Usage: ./simulator [filename] [particle_count] [t (seconds)] [frames/s]\n"
+#define LOG_INFO_FRAME(C, T) printf("[frame] %d / %d done.\n", C, T)
 
 #define ERROR(M, R) printf(M); return R
 #define LOG(M) printf("%s", M);
+
+#define LOG_SETTINGS(S) printf("[settings]: n = %d\n[settings]: t = %d\n[settings]: fps = %d\n", S->particle_count, S->time, S->fps)
 
 #define THREAD_COUNT 8
 #define PARTICLE_SIZE 5 * sizeof(float)

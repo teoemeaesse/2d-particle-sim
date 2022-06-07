@@ -16,17 +16,17 @@ unsigned int compile_shader(const char * src, unsigned int type) {
     int result;
     glGetShaderiv(id, GL_COMPILE_STATUS, &result);
     if(!result) {
-        printf("Error in %s shader. Log:\n", type == GL_VERTEX_SHADER ? "vertex" : "fragment");
         int length;
         glGetShaderiv(id, GL_INFO_LOG_LENGTH, &length);
 
         char * message = (char *) malloc(length * sizeof(char));
         glGetShaderInfoLog(id, length, &length, message);
-        printf("%s\n", message);
+        LOG(message);
         free(message);
         
         glDeleteShader(id);
-        return 0;
+
+        ERROR(ERR_SHADER_COMPILE(type), 0);
     }
 
     return id;
