@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <time.h>
+#include <string.h>
 
 typedef struct {
     int x, y;
@@ -73,13 +74,12 @@ void error(int err, const char * description) {
 int main(int argc, char * argv[]) {
     if((sim = load_simulation(argc, argv)) == NULL)
         return -1;
-    sim->frame = 0;
 
     if (!glfwInit())
         return 1;
     
     glfwSetErrorCallback(error);
-    
+
     Window w = {{WIDTH, HEIGHT}, glfwCreateWindow(WIDTH, HEIGHT, TITLE, NULL, NULL)};
     window = w;
 
@@ -109,7 +109,7 @@ int main(int argc, char * argv[]) {
     unsigned int shader = create_shader(v_shader, f_shader);
     glUseProgram(shader);
     
-    uint64_t delta = 1000000/144/4,
+    uint64_t delta = 1000000/(sim->framerate),
              acc = 0;
 
     struct timespec start, end;

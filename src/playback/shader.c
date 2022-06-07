@@ -1,11 +1,11 @@
 #include <GLFW/glfw3.h>
 
 #include "shader.h"
+#include "common.h"
 
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-
 
 unsigned int compile_shader(const char * src, unsigned int type) {
     unsigned int id = glCreateShader(type);

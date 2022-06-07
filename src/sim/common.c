@@ -2,9 +2,9 @@
 
 #include <ctype.h>
 
-int isinteger(char * str) {
+int is_integer(char * str) {
     while(*str != '\0')
         if(!isdigit(*(str++)))
-            return -1;
-    return 0;
+            return 0;
+    return 1;
 }

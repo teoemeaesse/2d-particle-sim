@@ -4,46 +4,60 @@
 #include <string.h>
 #include <stdlib.h>
 
-simulation_t * create_simulation() {
+#include "common.h"
+
+simulation_t * create_simulation(int framerate) {
     simulation_t * sim = (simulation_t *) malloc(sizeof(simulation_t));
     sim->settings = (settings_t *) malloc(sizeof(settings_t));
     sim->particles = NULL;
+    sim->framerate = framerate;
+    sim->frame = 0;
 
     return sim;
 }
 
 simulation_t * load_simulation(int argc, char * argv[]) {
-    if(argc < 2) {
-        printf("[load_simulation]: Invalid number of arguments (received %d)...", argc);
-        return NULL;
+    if(argc != 3) {
+        ERROR(ERR_INVALID_ARGC(argc), NULL);
     }
 
-    FILE * fp = fopen(argv[1], "r");
+    FILE * fp = fopen(argv[ARG_FILE], "r");
     if(fp == NULL) {
-        printf("[load_simulation]: Could not open file _%s_; terminating...\n", argv[1]);
-        return NULL;
+        LOG(USAGE);
+        if(fclose(fp) != 0) {
+            ERROR(ERR_FCLOSE(argv[ARG_FILE]), NULL);
+        }
+        ERROR(ERR_FOPEN(argv[ARG_FILE]), NULL);
     }
 
-    simulation_t * sim = create_simulation();
+    if(!is_integer(argv[ARG_FRAMERATE])) {
+        LOG(USAGE);
+        if(fclose(fp) != 0) {
+            ERROR(ERR_FCLOSE(argv[ARG_FILE]), NULL);
+        }
+        ERROR(ERR_INVALID_FRAMERATE(argv[ARG_FRAMERATE]), NULL);
+    }
 
-    size_t r;
-    if((r = fread(sim->settings, sizeof(settings_t), 1, fp)) != 1) {
-        printf("[load_simulation]: Error reading simulation settings; terminating...\n");
+    simulation_t * sim = create_simulation(atoi(argv[ARG_FRAMERATE]));
+
+    if(fread(sim->settings, sizeof(settings_t), 1, fp) != 1) {
         unload_simulation(sim);
-        return NULL;
+        ERROR(ERR_FREAD(argv[ARG_FILE]), NULL);
     }
 
     size_t frame_size = sim->settings->particle_count * PARTICLE_SIZE,
            frame_count = sim->settings->fps * sim->settings->time;
     sim->particles = (float *) malloc(frame_size * frame_count);
 
-    if((r = fread(sim->particles, frame_size, frame_count, fp)) != frame_count) {
-        printf("[load_simulation]: Error reading simulation (read %ld kb, expected %ld kb); terminating...\n", r * frame_size / 1024, frame_size * frame_count / 1024);
+    size_t r = fread(sim->particles, frame_size, frame_count, fp);
+    if(r != frame_count) {
         unload_simulation(sim);
-        return NULL;
+        ERROR(ERR_RSIM(r * frame_size / 1024, frame_size * frame_count / 1024), NULL);
     }
 
-    fclose(fp);
+    if(fclose(fp) != 0) {
+        ERROR(ERR_FCLOSE(argv[ARG_FILE]), NULL);
+    }
 
     printf("[load_simulation]: n=%d\n", sim->settings->particle_count);
     printf("[load_simulation]: t=%d\n", sim->settings->time);

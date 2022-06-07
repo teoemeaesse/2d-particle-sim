@@ -1,6 +1,23 @@
 #ifndef __COMMON_H__
 #define __COMMON_H__
 
+#define ARG_FILE 1
+#define ARG_PARTICLE_N 2
+#define ARG_TIME 3
+#define ARG_FRAMERATE 4
+
+#define ERR_FOPEN(F) "[error]: Could not open file (%s).\n", F
+#define ERR_FCLOSE(F) "[error]: Error closing file (%s).\n", F
+#define ERR_FWRITE(F) "[error]: Error writing to file (%s).\n", F
+#define ERR_INVALID_ARGC(F) "[error]: Invalid number of arguments (%d).\n", F
+#define ERR_INVALID_PARTICLE_N(N) "[error]: Invalid particle count, please input an integer value (received %s).\n", N
+#define ERR_INVALID_DURATION(T) "[error]: Invalid simulation duration, please input a positive integer value (received %s);\n", T
+#define ERR_INVALID_FRAMERATE(F) "[error]: Received invalid framerate value (%s).\n", F
+#define USAGE "Usage: ./simulator [filename] [particle_count] [t (seconds)] [frames/s]\n"
+
+#define ERROR(M, R) printf(M); return R
+#define LOG(M) printf("%s", M);
+
 #define THREAD_COUNT 8
 #define PARTICLE_SIZE 5 * sizeof(float)
 #define PARTICLE_CALLOC(S) (float *) calloc(S, PARTICLE_SIZE)
@@ -12,6 +29,6 @@
 #define CONTINUE 0
 
 // returns whether a null terminated string represents an integer
-int isinteger(char * str);
+int is_integer(char * str);
 
 #endif

@@ -16,18 +16,23 @@ int init_output_file(settings_t * settings) {
     FILE * fp = fopen(settings->filename, "w");
 
     if(fp == NULL) {
-        printf("[init_output_file]: Could not open file _%s_...\n", settings->filename);
-        return -1;
+        ERROR(ERR_FOPEN(settings->filename), -1);
     }
 
-    fwrite(settings, sizeof(settings_t), 1, fp);
+    if(fwrite(settings, sizeof(settings_t), 1, fp) != 1) {
+        if(fclose(fp) != 0) {
+            ERROR(ERR_FCLOSE(settings->filename), -1);
+        }
+        ERROR(ERR_FWRITE(settings->filename), -1);
+    }
 
-    fclose(fp);
+    if(fclose(fp) != 0) {
+        ERROR(ERR_FCLOSE(settings->filename), -1);
+    }
 
     return 0;
 }
 
-// usage: ./simulator [filename] [particle_count] [t (seconds)] [frames/s]
 int main(int argc, char * argv[]) {
     settings_t * settings = (settings_t *) calloc(1, sizeof(settings_t));
     if(read_settings(settings, argc, argv) == -1) {
@@ -59,29 +64,26 @@ int main(int argc, char * argv[]) {
 
 int read_settings(settings_t * settings, int argc, char * argv[]) {
     if(argc != 5) {
-        printf("[error]: invalid number of arguments (received %d);\n Usage: ./simulator [filename] [particle_count] [t (seconds)] [frames/s]\n", argc - 1);
-        return -1;
+        LOG(USAGE);
+        ERROR(ERR_INVALID_ARGC(argc - 1), -1);
     }
     
-    if(isinteger(argv[2]) == -1) {
-        printf("[error]: invalid particle count, please input an integer value (received %s);\n", argv[2]);
-        return -1;
+    if(!is_integer(argv[ARG_PARTICLE_N])) {
+        ERROR(ERR_INVALID_PARTICLE_N(argv[ARG_PARTICLE_N]), -1);
     }
 
-    if(isinteger(argv[3]) == -1 || atoi(argv[3]) == 0) {
-        printf("[error]: invalid simulation duration, please input a positive integer value (received %s);\n", argv[3]);
-        return -1;
+    if(!is_integer(argv[ARG_TIME]) || atoi(argv[ARG_TIME]) == 0) {
+        ERROR(ERR_INVALID_DURATION(argv[ARG_TIME]), -1);
     }
 
-    if(isinteger(argv[4]) == -1 || atoi(argv[4]) == 0) {
-        printf("[error]: invalid framerate, please input a positive integer value (received %s);\n", argv[4]);
-        return -1;
+    if(!is_integer(argv[ARG_FRAMERATE]) || atoi(argv[ARG_FRAMERATE]) == 0) {
+        ERROR(ERR_INVALID_FRAMERATE(argv[ARG_FRAMERATE]), -1);
     }
 
-    settings->filename = argv[1];
-    settings->particle_count = atoi(argv[2]);
-    settings->time = atoi(argv[3]);
-    settings->fps = atoi(argv[4]);
+    settings->filename = argv[ARG_FILE];
+    settings->particle_count = atoi(argv[ARG_PARTICLE_N]);
+    settings->time = atoi(argv[ARG_TIME]);
+    settings->fps = atoi(argv[ARG_FRAMERATE]);
 
     return 0;
 }

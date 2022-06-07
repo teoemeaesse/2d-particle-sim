@@ -15,7 +15,4 @@ int init_output_file(settings_t * settings);
 */
 int read_settings(settings_t * settings, int argc, char * argv[]);
 
-// returns whether a null terminated string represents an integer
-int isinteger(char * str);
-
 #endif

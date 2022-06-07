@@ -155,8 +155,7 @@ void export_frame(char * filepath) {
     FILE * fp = fopen(filepath, "a");
 
     if(fp == NULL) {
-        printf("[export_frame]: Could not open file _%s_...\n", filepath);
-        return;
+        ERROR(ERR_FOPEN(filepath), );
     }
 
     for(int i = 0; i < THREAD_COUNT; i++) {
@@ -165,7 +164,6 @@ void export_frame(char * filepath) {
         while(worker_state[i] == BUSY)
             pthread_cond_wait(&workers[i].cond_v, &workers[i].lock);
 
-        //printf("[stats]: i=%d; workers[i].n=%d\n", i, workers[i].n);
         fwrite(current_frames[i], PARTICLE_SIZE, workers[i].n, fp);
 
         worker_state[i] = BUSY;
@@ -174,7 +172,9 @@ void export_frame(char * filepath) {
         pthread_mutex_unlock(&workers[i].lock);
     }
 
-    fclose(fp);
+    if(fclose(fp) != 0) {
+        ERROR(ERR_FCLOSE(filepath), );
+    }
 }
 
 void join_workers() {

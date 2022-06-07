@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctype.h>
 
 #include "common.h"
 
@@ -46,4 +47,11 @@ char * read_file_as_string(const char * file) {
     }
 
     return buffer;
+}
+
+int is_integer(char * str) {
+    while(*str != '\0')
+        if(!isdigit(*(str++)))
+            return 0;
+    return 1;
 }

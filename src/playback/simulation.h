@@ -10,7 +10,7 @@ typedef struct {
 
 typedef struct {
     settings_t * settings;
-    int frame;
+    int frame, framerate;
     float * particles;
 } simulation_t;
 
