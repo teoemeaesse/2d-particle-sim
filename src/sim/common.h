@@ -21,10 +21,10 @@
 
 #define LOG_SETTINGS(S) printf("[settings]: n = %d\n[settings]: t = %d\n[settings]: fps = %d\n", S->particle_count, S->time, S->fps)
 
-#define THREAD_COUNT 8
+#define THREAD_COUNT 16
 #define PARTICLE_SIZE 5 * sizeof(float)
 #define PARTICLE_CALLOC(S) (float *) calloc(S, PARTICLE_SIZE)
-#define GRAVITATIONAL_CONSTANT 0.01f
+#define GRAVITATIONAL_CONSTANT 0.00001f
 
 #define BUSY 1
 #define IDLE 0

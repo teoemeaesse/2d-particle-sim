@@ -3,6 +3,7 @@
 #include "player.h"
 #include "simulation.h"
 #include "shader.h"
+#include "input.h"
 #include "common.h"
 
 #include <stdio.h>
@@ -11,15 +12,11 @@
 #include <string.h>
 
 typedef struct {
-    int x, y;
-} Vec2;
-
-typedef struct {
     Vec2 dimensions;
     GLFWwindow * handle;
 } Window;
 
-static Vec2 camera = {0, 0};
+static Vec2 camera = {0.0f, 0.0f};
 static simulation_t * sim;
 static Window window;
 
@@ -28,34 +25,11 @@ void pan_camera(Vec2 delta) {
     camera.y += delta.y;
 }
 
-void draw_point(float x, float y, float r, float g, float b, float a) {
-    glColor4f(r, g, b, a);
-    glVertex2f(x, y);
-}
-
-void update() {
-    next_frame(sim);
-}
-
-void render(unsigned int point_shader) {
-    glClear(GL_COLOR_BUFFER_BIT);
-    glLoadIdentity();
-    
-    const float u_dims[2] = {(float) window.dimensions.x, (float) window.dimensions.y};
-    glUniform2fv(glGetUniformLocation(point_shader, "window"), 1, u_dims);
-
-    glBufferData(GL_ARRAY_BUFFER, 5 * sim->settings->particle_count * sizeof(float), sim->particles + sim->settings->particle_count * sim->frame, GL_DYNAMIC_DRAW);
-    glDrawArrays(GL_POINTS, 0, sim->settings->particle_count);
-
-    glfwSwapBuffers(window.handle);
-    glfwPollEvents();
-}
-
 void resize(GLFWwindow * handle, int w, int h) {
 	if(h == 0)
 		h = 1;
     
-    Vec2 new_dimensions = {w, h};
+    Vec2 new_dimensions = {(float) w, (float) h};
     window.dimensions = new_dimensions;
 
 	glMatrixMode(GL_PROJECTION);
@@ -69,6 +43,38 @@ void resize(GLFWwindow * handle, int w, int h) {
 
 void error(int err, const char * description) {
     fputs(description, stderr);
+}
+
+void update() {
+    next_frame(sim);
+
+    Keyboard keyboard = get_keyboard();
+    float speed = (keyboard.lshift_down ? PAN_SPEED_SHIFT : PAN_SPEED) / sim->framerate,
+          dx = ((float) (keyboard.d_down - keyboard.a_down)) * speed / normalize_zoom(),
+          dy = ((float) (keyboard.w_down - keyboard.s_down)) * speed / normalize_zoom();
+    if(keyboard.r_down) {dx = -camera.x; dy = -camera.y;};
+    if(keyboard.f_down) {sim->frame = 0;};
+    Vec2 delta = {dx, dy};
+    pan_camera(delta);
+}
+
+void render(unsigned int point_shader) {
+    glClear(GL_COLOR_BUFFER_BIT);
+    glLoadIdentity();
+    
+    const float u_dims[2] = {(float) window.dimensions.x, (float) window.dimensions.y};
+    glUniform2fv(glGetUniformLocation(point_shader, "window"), 1, u_dims);
+
+    const float u_camera[2] = {(float) camera.x, (float) camera.y};
+    glUniform2fv(glGetUniformLocation(point_shader, "camera"), 1, u_camera);
+
+    const float u_zoom = normalize_zoom();
+    glUniform1f(glGetUniformLocation(point_shader, "zoom"), u_zoom);
+
+    glBufferData(GL_ARRAY_BUFFER, 5 * sim->settings->particle_count * sizeof(float), sim->particles + sim->settings->particle_count * sim->frame, GL_DYNAMIC_DRAW);
+    glDrawArrays(GL_POINTS, 0, sim->settings->particle_count);
+
+    glfwSwapBuffers(window.handle);
 }
 
 int main(int argc, char * argv[]) {
@@ -88,7 +94,10 @@ int main(int argc, char * argv[]) {
         return 1;
     }
 
+    glfwSetKeyCallback(window.handle, handle_keyboard);
+    glfwSetScrollCallback(window.handle, handle_scroll);
     glfwSetWindowSizeCallback(window.handle, resize);
+
     glfwMakeContextCurrent(window.handle);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_BLEND);
@@ -122,6 +131,8 @@ int main(int argc, char * argv[]) {
         }
 
         render(shader);
+        
+        glfwPollEvents();
 
         clock_gettime(CLOCK_MONOTONIC_RAW, &end);
         acc += (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_nsec - start.tv_nsec) / 1000;

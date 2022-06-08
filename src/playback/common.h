@@ -1,6 +1,10 @@
 #ifndef __COMMON_H__
 #define __COMMON_H__
 
+typedef struct {
+    float x, y;
+} Vec2;
+
 #define ARG_FILE 1
 #define ARG_FRAMERATE 2
 
@@ -18,6 +22,10 @@
 
 #define ERROR(M, R) printf(M); return R
 #define LOG(M) printf("%s", M);
+
+// PIXELS / SECOND
+#define PAN_SPEED 480.0f
+#define PAN_SPEED_SHIFT 800.0f
 
 // read in file as null-terminated string
 char * read_file_as_string(const char * file);

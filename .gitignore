@@ -7,3 +7,5 @@ src/sim/big.sim
 src/playback/test.sim
 src/sim/10k3600.sim
 src/sim/test.sim
+src/playback/3000slower.sim
+src/playback/4000slow.sim
