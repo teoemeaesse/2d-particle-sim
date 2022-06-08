@@ -9,6 +9,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <unistd.h>
+
 int init_output_file(settings_t * settings) {
     FILE * fp = fopen(settings->filename, "w");
 
@@ -29,7 +31,12 @@ int init_output_file(settings_t * settings) {
 
     return 0;
 }
-
+void gl_check_error() {
+    unsigned int error;
+    while((error = glGetError())) {
+        printf("[opengl error]: %d\n", error);
+    }
+}
 int main(int argc, char * argv[]) {
     settings_t * settings = (settings_t *) calloc(1, sizeof(settings_t));
     if(read_settings(settings, argc, argv) == -1) {
@@ -41,19 +48,43 @@ int main(int argc, char * argv[]) {
 
     init_output_file(settings);
 
-    unsigned int compute_shader = compile_shader("shaders/newtonian_gravity.comp", GL_COMPUTE_SHADER);
+    if (!glfwInit())
+        return 1;
+        
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 4);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_VISIBLE, 0);
+
+    GLFWwindow * w = glfwCreateWindow(100, 100, "", NULL, NULL);
+    if(w == NULL) {
+        glfwTerminate();
+        return 1;
+    }
+    glfwMakeContextCurrent(w);
+
+    char * src = read_file_as_string("shaders/newtonian_gravity.comp");
+    unsigned int compute_shader = compile_shader(src, GL_COMPUTE_SHADER);
+    free(src);
     unsigned int compute_program = glCreateProgram();
     glAttachShader(compute_program, compute_shader);
     glLinkProgram(compute_program);
 
-    int data[5];
+    int data[5] = {1, 2, 3, 4, 5};
     unsigned int ssbo;
     glGenBuffers(1, &ssbo);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(data), data, GL_DYNAMIC_DRAW);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, ssbo);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, 5 * sizeof(int), data, GL_DYNAMIC_DRAW);
+    
+    unsigned int loc = glGetProgramResourceIndex(compute_program, GL_SHADER_STORAGE_BLOCK, "data");
+    glShaderStorageBlockBinding(compute_program, loc, 1);
 
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
+    glUseProgram(compute_program);
+    glDispatchCompute(64, 1, 1);
+    glMemoryBarrier(GL_ALL_BARRIER_BITS);
+
+    //glGetNamedBufferSubData(ssbo, 0, 5 * sizeof(int), new_data);
 
     particle_t * particles = initialize_particles(settings->particle_count, square_initializer, uniform_mass_initializer);
 
@@ -68,6 +99,8 @@ int main(int argc, char * argv[]) {
 
     free(particles);
     free(settings);
+
+    glfwTerminate();
 
     return 0;
 }

@@ -1,6 +1,63 @@
-#version 430 core
-layout(local_size_x = 1, local_size_y = 1) in;
+#version 430
+
+layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
+layout(std430, binding = 1) buffer i_data
+{
+    float initial_frame[];
+};
+layout(std430, binding = 1) buffer f_data
+{
+    float final_frame[];
+};
+
+uniform int n;
+
+const int INVOCATION_TOTAL = 4096;
+
+#define PARTICLE_SIZE 5
+#define G 0.001f
 
 void main() {
-    return;
+    int k = int(gl_GlobalInvocationID.x),
+        nk = n / INVOCATION_TOTAL;
+
+    int start, end;
+    int remainder = int(mod(n, INVOCATION_TOTAL));
+    if(k < remainder) {
+        nk++;
+        start = k * nk;
+    }
+    else
+        start = remainder * (nk + 1) + (INVOCATION_TOTAL - remainder) * nk;
+    
+    end = start + nk;
+
+    for(int i = start; i < end; i++) {
+        float x = initial_frame[i * PARTICLE_SIZE],
+              y = initial_frame[i * PARTICLE_SIZE + 1],
+              xv = initial_frame[i * PARTICLE_SIZE + 2],
+              yv = initial_frame[i * PARTICLE_SIZE + 3],
+              xa = 0, ya = 0;
+
+        for(int j = 0; j < n; j++) {
+            float x2 = initial_frame[j * PARTICLE_SIZE], 
+                  y2 = initial_frame[j * PARTICLE_SIZE + 1],
+                  m = initial_frame[j * PARTICLE_SIZE + 2];
+            if(x == x2 && y == y2)
+                continue;
+            float dx = x2 - x, dy = y2 - y,
+                  len2 = dx * dx + dy * dy,
+                  gxm = G * m;
+            xa += dx * gxm / len2;
+            ya += dy * gxm / len2;
+        }
+
+        final_frame[i * PARTICLE_SIZE] = x + xv;
+        final_frame[i * PARTICLE_SIZE + 1] = y + yv;
+
+        final_frame[i * PARTICLE_SIZE + 2] = xv + xa;
+        final_frame[i * PARTICLE_SIZE + 3] = yv + ya;
+
+        final_frame[i * PARTICLE_SIZE + 4] = initial_frame[i * PARTICLE_SIZE + 4];
+    }
 }

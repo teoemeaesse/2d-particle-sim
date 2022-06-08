@@ -15,7 +15,7 @@
 #define ERR_INVALID_PARTICLE_N(N) "[error]: Invalid particle count, please input an integer value (received %s).\n", N
 #define ERR_INVALID_DURATION(T) "[error]: Invalid simulation duration, please input a positive integer value (received %s);\n", T
 //#define ERR_INVALID_FRAMERATE(F) "[error]: Received invalid framerate value (%s).\n", F
-#define ERR_SHADER_COMPILE(T) "[error]: Error compiling %s shader.\n", T == GL_VERTEX_SHADER ? "vertex" : "fragment"
+#define ERR_SHADER_COMPILE(T) "[error]: Error compiling %s shader.\n", T == GL_VERTEX_SHADER ? "vertex" : (T == GL_COMPUTE_SHADER ? "compute" : "fragment")
 
 #define INFO_USAGE "Usage: ./simulator [filename] [particle_count] [frames]\n"
 
