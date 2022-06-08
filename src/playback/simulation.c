@@ -12,13 +12,14 @@ simulation_t * create_simulation(int framerate) {
     sim->particles = NULL;
     sim->framerate = framerate;
     sim->frame = 0;
+    sim->paused = 0;
 
     return sim;
 }
 
 simulation_t * load_simulation(int argc, char * argv[]) {
     if(argc != 3) {
-        ERROR(ERR_INVALID_ARGC(argc), NULL);
+        ERROR(ERR_INVALID_ARGC(argc - 1), NULL);
     }
 
     FILE * fp = fopen(argv[ARG_FILE], "r");
@@ -45,24 +46,20 @@ simulation_t * load_simulation(int argc, char * argv[]) {
         ERROR(ERR_FREAD(argv[ARG_FILE]), NULL);
     }
 
-    size_t frame_size = sim->settings->particle_count * PARTICLE_SIZE,
-           frame_count = sim->settings->fps * sim->settings->time;
-    sim->particles = (float *) malloc(frame_size * frame_count);
+    size_t frame_size = sim->settings->particle_count * PARTICLE_SIZE;
+    sim->particles = (float *) malloc(frame_size * sim->settings->frames);
 
-    size_t r = fread(sim->particles, frame_size, frame_count, fp);
-    if(r != frame_count) {
+    size_t r = fread(sim->particles, frame_size, sim->settings->frames, fp);
+    if(r != sim->settings->frames) {
         unload_simulation(sim);
-        ERROR(ERR_RSIM(r * frame_size / 1024, frame_size * frame_count / 1024), NULL);
+        ERROR(ERR_RSIM(r * frame_size / 1024, frame_size * sim->settings->frames / 1024), NULL);
     }
 
     if(fclose(fp) != 0) {
         ERROR(ERR_FCLOSE(argv[ARG_FILE]), NULL);
     }
 
-    printf("[load_simulation]: n=%d\n", sim->settings->particle_count);
-    printf("[load_simulation]: t=%d\n", sim->settings->time);
-    printf("[load_simulation]: fps=%d\n", sim->settings->fps);
-    printf("[load_simulation]: simulation size (bytes)=%ld\n", frame_size * frame_count);
+    LOG_LOAD(sim);
     
     return sim;
 }
@@ -77,6 +74,6 @@ void unload_simulation(simulation_t * sim) {
 void next_frame(simulation_t * sim) {
     sim->frame++;
 
-    if(sim->frame == sim->settings->fps * sim->settings->time) 
+    if(sim->frame == sim->settings->frames) 
         sim->frame = 0;
 }

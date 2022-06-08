@@ -4,72 +4,32 @@
 #include <math.h>
 #include <stdlib.h>
 
-int uniform_mass_initializer() {
-    return (double) rand() / (double) RAND_MAX * 5;
+float uniform_mass_initializer() {
+    return (float) ((double) rand() / (double) RAND_MAX * 5);
 }
 
-float * initialize_particles(int n, void (*initialize_positions)(float*, int, int (*initialize_mass)()), int (*initialize_mass)()) {
-    float * particles = PARTICLE_CALLOC(n);
+particle_t * initialize_particles(int n, void (* initialize_positions)(particle_t *, int, float (* initialize_mass)()), float (* initialize_mass)()) {
+    particle_t * particles = PARTICLE_CALLOC(n);
 
     initialize_positions(particles, n, initialize_mass);
 
     return particles;
 }
 
-void square_initializer(float * particles, int n, int (*initialize_mass)()) {
+void square_initializer(particle_t * particles, int n, float (*initialize_mass)()) {
     int l = (int) sqrt((double) n);
     
     int i = 0;
     for(int x = 0; x < l; x++) {
         for(int y = 0; y < l; y++, i++) {
-            set_x(particles, i, x * 4);
-            set_y(particles, i, y * 4);
-            set_xv(particles, i, 0);
-            set_yv(particles, i, 0);
-            set_mass(particles, i, (*initialize_mass)());
+            particles[i].x = x * 4;
+            particles[i].y = y * 4;
+            particles[i].xv = 0;
+            particles[i].yv = 0;
+            particles[i].m = (* initialize_mass)();
 
             if(i == n)
                 return;
         }
     }
-}
-
-float get_x(float * particles, int index) {
-    return particles[index * 5];
-}
-
-float get_y(float * particles, int index) {
-    return particles[index * 5 + 1];
-}
-
-float get_xv(float * particles, int index) {
-    return particles[index * 5 + 2];
-}
-
-float get_yv(float * particles, int index) {
-    return particles[index * 5 + 3];
-}
-
-float get_mass(float * particles, int index) {
-    return particles[index * 5 + 4];
-}
-
-void set_x(float * particles, int index, float x) {
-    particles[index * 5] = x;
-}
-
-void set_y(float * particles, int index, float y) {
-    particles[index * 5 + 1] = y;
-}
-
-void set_xv(float * particles, int index, float xv) {
-    particles[index * 5 + 2] = xv;
-}
-
-void set_yv(float * particles, int index, float yv) {
-    particles[index * 5 + 3] = yv;
-}
-
-void set_mass(float * particles, int index, float mass) {
-    particles[index * 5 + 4] = mass;
 }

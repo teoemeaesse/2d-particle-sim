@@ -46,7 +46,8 @@ void error(int err, const char * description) {
 }
 
 void update() {
-    next_frame(sim);
+    if(!sim->paused)
+        next_frame(sim);
 
     Keyboard keyboard = get_keyboard();
     float speed = (keyboard.lshift_down ? PAN_SPEED_SHIFT : PAN_SPEED) / sim->framerate,
@@ -56,6 +57,8 @@ void update() {
     if(keyboard.f_down) {sim->frame = 0;};
     Vec2 delta = {dx, dy};
     pan_camera(delta);
+
+    if(keyboard.space_down) sim->paused = 1 - sim->paused;
 }
 
 void render(unsigned int point_shader) {

@@ -2,7 +2,7 @@
 #define __INPUT_H__
 
 typedef struct {
-    int w_down, a_down, s_down, d_down, r_down, f_down, lshift_down;
+    int w_down, a_down, s_down, d_down, r_down, f_down, space_down, lshift_down;
 } Keyboard;
 
 void handle_keyboard(GLFWwindow * window, int key, int scancode, int action, int mods);

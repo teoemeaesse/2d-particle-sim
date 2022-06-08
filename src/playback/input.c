@@ -22,6 +22,8 @@ void handle_keyboard(GLFWwindow * window, int key, int scancode, int action, int
             keyboard.r_down = action;
         if(key == GLFW_KEY_F)
             keyboard.f_down = action;
+        if(key == GLFW_KEY_SPACE)
+            keyboard.space_down = action;
         if(key == GLFW_KEY_LEFT_SHIFT)
             keyboard.lshift_down = action;
     }

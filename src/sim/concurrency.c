@@ -9,8 +9,8 @@
 
 static worker_t workers[THREAD_COUNT];
 static int worker_state[THREAD_COUNT];
-static float * current_frames[THREAD_COUNT];
-static float * updated_frames[THREAD_COUNT];
+static particle_t * current_frames[THREAD_COUNT];
+static particle_t * updated_frames[THREAD_COUNT];
 static int flag = CONTINUE;
 
 void * update_acc(void * worker_arg) {
@@ -23,18 +23,17 @@ void * update_acc(void * worker_arg) {
             pthread_cond_wait(&worker->cond_v, &worker->lock);
 
         for(int i = 0; i < worker->n; i++) {
-            float x = get_x(worker->current_frame, i),
-                y = get_y(worker->current_frame, i),
-                xv = get_xv(worker->current_frame, i),
-                yv = get_yv(worker->current_frame, i),
-                xa = 0, ya = 0;
-            
+            float x = worker->current_frame[i].x,
+                  y = worker->current_frame[i].y,
+                 xv = worker->current_frame[i].xv,
+                 yv = worker->current_frame[i].yv,
+                 xa = 0, ya = 0;
 
             for(int j = 0; j < THREAD_COUNT; j++) {
                 for(int k = 0; k < workers[j].n; k++) {
-                    float x2 = get_x(workers[j].current_frame, k),
-                          y2 = get_y(workers[j].current_frame, k),
-                          m = get_mass(workers[j].current_frame, k);
+                    float x2 = workers[j].current_frame[k].x,
+                          y2 = workers[j].current_frame[k].y,
+                          m = workers[j].current_frame[k].m;
                     if(x == x2 && y == y2)
                         continue;
                     float len2 = pow(x2 - x, 2) + pow(y2 - y, 2);
@@ -44,14 +43,13 @@ void * update_acc(void * worker_arg) {
                 }
             }
                
-            set_x(worker->updated_frame, i, x + xv);
-            set_y(worker->updated_frame, i, y + yv);
+            worker->updated_frame[i].x = x + xv;
+            worker->updated_frame[i].y = y + yv;
 
-            set_xv(worker->updated_frame, i, xv + xa);
-            set_yv(worker->updated_frame, i, yv + ya);
+            worker->updated_frame[i].xv = xv + xa;
+            worker->updated_frame[i].yv = yv + ya;
 
-            set_mass(worker->updated_frame, i, get_mass(worker->current_frame, i));
-                
+            worker->updated_frame[i].m = worker->current_frame[i].m;
         }
 
         memcpy(worker->current_frame, ((void*) worker->updated_frame), PARTICLE_SIZE * worker->n);
@@ -65,7 +63,7 @@ void * update_acc(void * worker_arg) {
     return NULL;
 }
 
-void * update_cm(void * worker_arg) {
+/*void * update_cm(void * worker_arg) {
     worker_t * worker = (worker_t *) worker_arg;
     
     pthread_mutex_lock(&worker->lock);
@@ -80,9 +78,9 @@ void * update_cm(void * worker_arg) {
         // add up particle positions
         for(int i = 0; i < THREAD_COUNT; i++) {
             for(int j = 0; j < workers[i].n; j++) {
-                x_cm += get_x(workers[i].current_frame, j);
-                y_cm += get_y(workers[i].current_frame, j);
-                t_m += get_mass(workers[i].current_frame, j);
+                x_cm += workers[i].current_frame[j].x;
+                y_cm += workers[i].current_frame[j].y;
+                t_m += workers[i].current_frame[j].m;
             }
         }
 
@@ -91,10 +89,10 @@ void * update_cm(void * worker_arg) {
         //printf("CM: %d : %d\n", (int) x_cm, (int) y_cm);
 
         for(int i = 0; i < worker->n; i++) {
-            float x = get_x(worker->current_frame, i),
-                y = get_y(worker->current_frame, i),
-                xv = get_xv(worker->current_frame, i),
-                yv = get_yv(worker->current_frame, i);
+            float x = worker->current_frame[i].x,
+                  y = worker->current_frame[i].y,
+                 xv = worker->current_frame[i].xv,
+                 yv = worker->current_frame[i].yv;
             
             float len2 = pow(x_cm - x, 2) + pow(y_cm - y, 2);
             float gxt_m = GRAVITATIONAL_CONSTANT * t_m;
@@ -119,9 +117,9 @@ void * update_cm(void * worker_arg) {
     pthread_mutex_unlock(&worker->lock);
 
     return NULL;
-}
+}*/
 
-int init_workers(float * particles, int particle_count, void *(*update_method)(void *)) {
+int init_workers(particle_t * particles, int particle_count, void *(* update_method)(void *)) {
     int ppt = particle_count / THREAD_COUNT,
        rppt = particle_count % THREAD_COUNT + ppt;
     
@@ -134,7 +132,7 @@ int init_workers(float * particles, int particle_count, void *(*update_method)(v
 
         int p = i == THREAD_COUNT - 1 ? rppt : ppt;
         current_frames[i] = PARTICLE_CALLOC(p);
-        memcpy(current_frames[i], ((void* ) particles) + carry * PARTICLE_SIZE, p * PARTICLE_SIZE);
+        memcpy(current_frames[i], ((void *) particles) + carry * PARTICLE_SIZE, p * PARTICLE_SIZE);
         carry += p;
         updated_frames[i] = PARTICLE_CALLOC(p);
         workers[i].n = p;

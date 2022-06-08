@@ -1,13 +1,15 @@
 #ifndef __CONCURRENCY_H__
 #define __CONCURRENCY_H__
 
+#include "particle.h"
+
 #include <pthread.h>
 
 typedef struct {
   pthread_t thread;
   pthread_mutex_t lock;
   pthread_cond_t cond_v;
-  float * current_frame, * updated_frame;
+  particle_t * current_frame, * updated_frame;
   int id, n;
 } worker_t;
 
@@ -26,7 +28,7 @@ void * update_cm(void * worker_arg);
     particles (int): total number of particles to simulate
     update_method (void * func(void *)): algorithm to update particle positions
 */
-int init_workers(float * particles, int particle_count, void *(*update_method)(void *));
+int init_workers(particle_t * particles, int particle_count, void *(* update_method)(void *));
 
 /* Exports frame and signals workers to process the next frame
     filepath (char *): path to export file

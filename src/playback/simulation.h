@@ -5,12 +5,12 @@
 
 typedef struct {
     char * filename;
-    int particle_count, time, fps;
+    int particle_count, frames;
 } settings_t;
 
 typedef struct {
     settings_t * settings;
-    int frame, framerate;
+    int frame, framerate, paused;
     float * particles;
 } simulation_t;
 

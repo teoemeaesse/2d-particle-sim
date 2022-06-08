@@ -38,14 +38,13 @@ int main(int argc, char * argv[]) {
 
     init_output_file(settings);
 
-    float * particles = initialize_particles(settings->particle_count, square_initializer, uniform_mass_initializer);
+    particle_t * particles = initialize_particles(settings->particle_count, square_initializer, uniform_mass_initializer);
 
     init_workers(particles, settings->particle_count, update_acc);
 
-    int frames = settings->time * settings->fps;
-    for(int i = 0; i < frames; i++) {
+    for(int i = 0; i < settings->frames; i++) {
         export_frame(settings->filename);
-        LOG_INFO_FRAME(i, frames);
+        LOG_INFO_FRAME(i, settings->frames, ((float) ((int) (i / (float) settings->frames * 10000))) / 100.0f);
     }
 
     join_workers();
@@ -57,7 +56,7 @@ int main(int argc, char * argv[]) {
 }
 
 int read_settings(settings_t * settings, int argc, char * argv[]) {
-    if(argc != 5) {
+    if(argc != 4) {
         LOG(INFO_USAGE);
         ERROR(ERR_INVALID_ARGC(argc - 1), -1);
     }
@@ -66,18 +65,13 @@ int read_settings(settings_t * settings, int argc, char * argv[]) {
         ERROR(ERR_INVALID_PARTICLE_N(argv[ARG_PARTICLE_N]), -1);
     }
 
-    if(!is_integer(argv[ARG_TIME]) || atoi(argv[ARG_TIME]) == 0) {
-        ERROR(ERR_INVALID_DURATION(argv[ARG_TIME]), -1);
-    }
-
-    if(!is_integer(argv[ARG_FRAMERATE]) || atoi(argv[ARG_FRAMERATE]) == 0) {
-        ERROR(ERR_INVALID_FRAMERATE(argv[ARG_FRAMERATE]), -1);
+    if(!is_integer(argv[ARG_FRAMES]) || atoi(argv[ARG_FRAMES]) == 0) {
+        ERROR(ERR_INVALID_DURATION(argv[ARG_FRAMES]), -1);
     }
 
     settings->filename = argv[ARG_FILE];
     settings->particle_count = atoi(argv[ARG_PARTICLE_N]);
-    settings->time = atoi(argv[ARG_TIME]);
-    settings->fps = atoi(argv[ARG_FRAMERATE]);
+    settings->frames = atoi(argv[ARG_FRAMES]);
 
     return 0;
 }

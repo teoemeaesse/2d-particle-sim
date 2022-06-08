@@ -3,7 +3,7 @@
 
 typedef struct {
     char * filename;
-    int particle_count, time, fps;
+    int particle_count, frames;
 } settings_t;
 
 /* Creates output file and writes the simulation settings to it
