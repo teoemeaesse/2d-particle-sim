@@ -47,11 +47,14 @@ simulation_t * load_simulation(int argc, char * argv[]) {
     }
 
     size_t frame_size = sim->settings->particle_count * PARTICLE_SIZE;
-    sim->particles = (float *) malloc(frame_size * sim->settings->frames);
+    sim->particles = (particle_t *) malloc(frame_size * sim->settings->frames);
 
     size_t r = fread(sim->particles, frame_size, sim->settings->frames, fp);
     if(r != sim->settings->frames) {
         unload_simulation(sim);
+        if(fclose(fp) != 0) {
+            ERROR(ERR_FCLOSE(argv[ARG_FILE]), NULL);
+        }
         ERROR(ERR_RSIM(r * frame_size / 1024, frame_size * sim->settings->frames / 1024), NULL);
     }
 

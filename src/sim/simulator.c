@@ -1,6 +1,9 @@
+#include <GLFW/glfw3.h>
+
 #include "simulator.h"
 #include "particle.h"
 #include "concurrency.h"
+#include "compute.h"
 #include "common.h"
 
 #include <stdio.h>
@@ -37,6 +40,20 @@ int main(int argc, char * argv[]) {
     LOG_SETTINGS(settings);
 
     init_output_file(settings);
+
+    unsigned int compute_shader = compile_shader("shaders/newtonian_gravity.comp", GL_COMPUTE_SHADER);
+    unsigned int compute_program = glCreateProgram();
+    glAttachShader(compute_program, compute_shader);
+    glLinkProgram(compute_program);
+
+    int data[5];
+    unsigned int ssbo;
+    glGenBuffers(1, &ssbo);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(data), data, GL_DYNAMIC_DRAW);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, ssbo);
+
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
 
     particle_t * particles = initialize_particles(settings->particle_count, square_initializer, uniform_mass_initializer);
 

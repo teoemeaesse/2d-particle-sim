@@ -25,6 +25,17 @@ void pan_camera(Vec2 delta) {
     camera.y += delta.y;
 }
 
+void gl_clear_error() {
+    while(glGetError() != GL_NO_ERROR);
+}
+
+void gl_check_error() {
+    unsigned int error;
+    while((error = glGetError())) {
+        printf("[opengl error]: %d\n", error);
+    }
+}
+
 void resize(GLFWwindow * handle, int w, int h) {
 	if(h == 0)
 		h = 1;
@@ -32,13 +43,7 @@ void resize(GLFWwindow * handle, int w, int h) {
     Vec2 new_dimensions = {(float) w, (float) h};
     window.dimensions = new_dimensions;
 
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-    
     glViewport(0, 0, w, h);
-    glOrtho(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f);
-	
-    glMatrixMode(GL_MODELVIEW);
 }
 
 void error(int err, const char * description) {
@@ -53,7 +58,7 @@ void update() {
     float speed = (keyboard.lshift_down ? PAN_SPEED_SHIFT : PAN_SPEED) / sim->framerate,
           dx = ((float) (keyboard.d_down - keyboard.a_down)) * speed / normalize_zoom(),
           dy = ((float) (keyboard.w_down - keyboard.s_down)) * speed / normalize_zoom();
-    if(keyboard.r_down) {dx = -camera.x; dy = -camera.y;};
+    if(keyboard.r_down) {dx = -camera.x; dy = -camera.y; reset_zoom();};
     if(keyboard.f_down) {sim->frame = 0;};
     Vec2 delta = {dx, dy};
     pan_camera(delta);
@@ -86,6 +91,11 @@ int main(int argc, char * argv[]) {
 
     if (!glfwInit())
         return 1;
+        
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 4);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     
     glfwSetErrorCallback(error);
 
@@ -104,22 +114,27 @@ int main(int argc, char * argv[]) {
     glfwMakeContextCurrent(window.handle);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_BLEND);
-    resize(window.handle, WIDTH, HEIGHT);
 
     glfwSwapInterval(0);
 
+    GLuint vao_name;
+    glGenVertexArrays(1, &vao_name);
+    glBindVertexArray(vao_name);
+
     unsigned int buffer;
     glGenBuffers(1, &buffer);
-    glBindBuffer(GL_ARRAY_BUFFER, buffer);
 
     glEnableVertexAttribArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, buffer);
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 5 * sizeof(float), 0);
 
     char * v_shader = read_file_as_string("shaders/point.vert"),
          * f_shader = read_file_as_string("shaders/point.frag");
 
     unsigned int shader = create_shader(v_shader, f_shader);
-    glUseProgram(shader);
+
+    use_shader(shader);
+
     
     uint64_t delta = 1000000/(sim->framerate),
              acc = 0;

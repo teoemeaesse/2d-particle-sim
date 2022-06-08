@@ -1,7 +1,7 @@
 #ifndef __SIMULATION_H__
 #define __SIMULATION_H__
 
-#define PARTICLE_SIZE 5 * sizeof(float)
+#define PARTICLE_SIZE sizeof(particle_t)
 
 typedef struct {
     char * filename;
@@ -9,9 +9,13 @@ typedef struct {
 } settings_t;
 
 typedef struct {
+    float x, y, xv, yv, m;
+} particle_t;
+
+typedef struct {
     settings_t * settings;
     int frame, framerate, paused;
-    float * particles;
+    particle_t * particles;
 } simulation_t;
 
 simulation_t * load_simulation(int argc, char * argv[]);

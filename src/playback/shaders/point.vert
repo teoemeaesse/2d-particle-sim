@@ -1,4 +1,4 @@
-#version 330 core
+#version 430 core
 
 uniform vec2 window;
 uniform vec2 camera;

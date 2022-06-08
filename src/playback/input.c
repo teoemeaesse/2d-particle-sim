@@ -48,3 +48,7 @@ Keyboard get_keyboard() {
 float get_zoom() {
     return zoom;
 }
+
+void reset_zoom() {
+    zoom = 1.0f;
+}

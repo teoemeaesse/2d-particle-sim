@@ -15,4 +15,6 @@ Keyboard get_keyboard();
 
 float get_zoom();
 
+void reset_zoom();
+
 #endif

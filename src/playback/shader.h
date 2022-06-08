@@ -3,5 +3,6 @@
 
 unsigned int compile_shader(const char * src, unsigned int type);
 unsigned int create_shader(const char * vertex, const char * fragment);
+int use_shader(unsigned int shader);
 
 #endif

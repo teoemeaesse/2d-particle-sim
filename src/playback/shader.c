@@ -39,11 +39,34 @@ unsigned int create_shader(const char * vertex, const char * fragment) {
 
     glAttachShader(program, v_shader);
     glAttachShader(program, f_shader);
-    glLinkProgram(program);
     glValidateProgram(program);
 
     glDeleteShader(v_shader);
     glDeleteShader(f_shader);
 
     return program;
+}
+
+int use_shader(unsigned int shader) {
+    glLinkProgram(shader);
+
+    int result;
+    glGetProgramiv(shader, GL_LINK_STATUS, &result);
+    if(!result) {
+        LOG(ERR_SHADER_LINK);
+
+        int length;
+        glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &length);
+
+        char * message = (char *) malloc(length * sizeof(char));
+        glGetShaderInfoLog(shader, length, &length, message);
+        LOG(message);
+        free(message);
+
+        return -1;
+    }
+    
+    glUseProgram(shader);
+
+    return 0;
 }
