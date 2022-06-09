@@ -28,6 +28,9 @@ void main() {
     end = start + n0;
     if(k < remainder)
         end++;
+    
+    if(INVOCATION_TOTAL > n && k >= remainder)
+        return;
 
     for(int i = start; i < end; i++) {
         float x = initial_frame[i * PARTICLE_SIZE],
