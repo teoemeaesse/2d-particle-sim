@@ -1,8 +1,6 @@
 #include <GLFW/glfw3.h>
 
 #include "simulator.h"
-#include "particle.h"
-#include "concurrency.h"
 #include "compute.h"
 #include "common.h"
 
@@ -31,12 +29,7 @@ int init_output_file(settings_t * settings) {
 
     return 0;
 }
-void gl_check_error() {
-    unsigned int error;
-    while((error = glGetError())) {
-        printf("[opengl error]: %d\n", error);
-    }
-}
+
 int main(int argc, char * argv[]) {
     settings_t * settings = (settings_t *) calloc(1, sizeof(settings_t));
     if(read_settings(settings, argc, argv) == -1) {
@@ -57,47 +50,15 @@ int main(int argc, char * argv[]) {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_VISIBLE, 0);
 
-    GLFWwindow * w = glfwCreateWindow(100, 100, "", NULL, NULL);
+    GLFWwindow * w = glfwCreateWindow(100, 100, "simulator", NULL, NULL);
     if(w == NULL) {
         glfwTerminate();
         return 1;
     }
     glfwMakeContextCurrent(w);
 
-    char * src = read_file_as_string("shaders/newtonian_gravity.comp");
-    unsigned int compute_shader = compile_shader(src, GL_COMPUTE_SHADER);
-    free(src);
-    unsigned int compute_program = glCreateProgram();
-    glAttachShader(compute_program, compute_shader);
-    glLinkProgram(compute_program);
+    start_sim(settings);
 
-    int data[5] = {1, 2, 3, 4, 5};
-    unsigned int ssbo;
-    glGenBuffers(1, &ssbo);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, ssbo);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, 5 * sizeof(int), data, GL_DYNAMIC_DRAW);
-    
-    unsigned int loc = glGetProgramResourceIndex(compute_program, GL_SHADER_STORAGE_BLOCK, "data");
-    glShaderStorageBlockBinding(compute_program, loc, 1);
-
-    glUseProgram(compute_program);
-    glDispatchCompute(64, 1, 1);
-    glMemoryBarrier(GL_ALL_BARRIER_BITS);
-
-    //glGetNamedBufferSubData(ssbo, 0, 5 * sizeof(int), new_data);
-
-    particle_t * particles = initialize_particles(settings->particle_count, square_initializer, uniform_mass_initializer);
-
-    init_workers(particles, settings->particle_count, update_acc);
-
-    for(int i = 0; i < settings->frames; i++) {
-        export_frame(settings->filename);
-        LOG_INFO_FRAME(i, settings->frames, ((float) ((int) (i / (float) settings->frames * 10000))) / 100.0f);
-    }
-
-    join_workers();
-
-    free(particles);
     free(settings);
 
     glfwTerminate();

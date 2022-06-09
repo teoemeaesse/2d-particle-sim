@@ -16,6 +16,7 @@
 #define ERR_INVALID_DURATION(T) "[error]: Invalid simulation duration, please input a positive integer value (received %s);\n", T
 //#define ERR_INVALID_FRAMERATE(F) "[error]: Received invalid framerate value (%s).\n", F
 #define ERR_SHADER_COMPILE(T) "[error]: Error compiling %s shader.\n", T == GL_VERTEX_SHADER ? "vertex" : (T == GL_COMPUTE_SHADER ? "compute" : "fragment")
+#define ERR_EXPORT_FRAME(F) "[error]: Error exporting frame #%d.\n", F
 
 #define INFO_USAGE "Usage: ./simulator [filename] [particle_count] [frames]\n"
 
@@ -26,8 +27,8 @@
 #define LOG_SETTINGS(S) printf("[settings]: n = %d\n[settings]: t = %d\n", S->particle_count, S->frames)
 
 #define THREAD_COUNT 16
-#define PARTICLE_SIZE sizeof(particle_t)
-#define PARTICLE_CALLOC(S) (particle_t *) calloc(S, PARTICLE_SIZE)
+#define PARTICLE_SIZE 5 * sizeof(float)
+#define PARTICLE_CALLOC(S) (float *) calloc(S, PARTICLE_SIZE)
 #define GRAVITATIONAL_CONSTANT 0.00001f
 
 #define BUSY 1

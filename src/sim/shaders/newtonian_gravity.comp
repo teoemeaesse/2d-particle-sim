@@ -5,17 +5,17 @@ layout(std430, binding = 1) buffer i_data
 {
     float initial_frame[];
 };
-layout(std430, binding = 1) buffer f_data
+layout(std430, binding = 2) buffer f_data
 {
     float final_frame[];
 };
 
-uniform int n;
+const int n = 100;
 
 const int INVOCATION_TOTAL = 4096;
 
 #define PARTICLE_SIZE 5
-#define G 0.001f
+#define G 0.01f
 
 void main() {
     int k = int(gl_GlobalInvocationID.x),
@@ -32,7 +32,7 @@ void main() {
     
     end = start + nk;
 
-    for(int i = start; i < end; i++) {
+    for(int i = 0; i < 100; i++) {
         float x = initial_frame[i * PARTICLE_SIZE],
               y = initial_frame[i * PARTICLE_SIZE + 1],
               xv = initial_frame[i * PARTICLE_SIZE + 2],
@@ -52,8 +52,8 @@ void main() {
             ya += dy * gxm / len2;
         }
 
-        final_frame[i * PARTICLE_SIZE] = x + xv;
-        final_frame[i * PARTICLE_SIZE + 1] = y + yv;
+        final_frame[i * PARTICLE_SIZE] = x + xv + xa;
+        final_frame[i * PARTICLE_SIZE + 1] = y + yv + ya;
 
         final_frame[i * PARTICLE_SIZE + 2] = xv + xa;
         final_frame[i * PARTICLE_SIZE + 3] = yv + ya;
