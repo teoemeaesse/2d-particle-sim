@@ -94,7 +94,7 @@ int start_sim(settings_t * settings) {
         glNamedBufferData(ssbo_i, PARTICLE_SIZE * settings->particle_count, i == 0 ? particles : updated_particles, GL_DYNAMIC_DRAW);
 
         glUseProgram(compute_program);
-        glDispatchCompute(1, 1, 1);
+        glDispatchCompute(8, 1, 1);
         glMemoryBarrier(GL_ALL_BARRIER_BITS);
         
         glGetNamedBufferSubData(ssbo_f, 0, PARTICLE_SIZE * settings->particle_count, updated_particles);
