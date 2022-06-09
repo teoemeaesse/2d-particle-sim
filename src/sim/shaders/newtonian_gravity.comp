@@ -24,7 +24,7 @@ void main() {
     int remainder = int(mod(n, INVOCATION_TOTAL)),
         n0 = floor(n / INVOCATION_TOTAL);
     
-    start = min(k, remainder) * (n0 + 1)z + max(0, (k - remainder) * n0);
+    start = min(k, remainder) * (n0 + 1) + max(0, (k - remainder) * n0);
     end = start + n0;
     if(k < remainder)
         end++;
