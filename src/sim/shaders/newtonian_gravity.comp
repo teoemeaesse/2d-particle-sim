@@ -34,7 +34,7 @@ void main() {
               y = initial_frame[i * PARTICLE_SIZE + 1],
               xv = initial_frame[i * PARTICLE_SIZE + 2],
               yv = initial_frame[i * PARTICLE_SIZE + 3],
-              xa = 0.001f, ya = 0.001f;
+              xa = 0, ya = 0;
 
         for(int j = 0; j < n; j++) {
             float x2 = initial_frame[j * PARTICLE_SIZE], 
