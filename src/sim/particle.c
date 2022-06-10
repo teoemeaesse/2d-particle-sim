@@ -5,7 +5,7 @@
 #include <stdlib.h>
 
 float uniform_mass_initializer() {
-    return (float) ((double) rand() / (double) RAND_MAX * 5);
+    return 1.0f;
 }
 
 float * initialize_particles(int n, void (* initialize_positions)(float *, int, float (* initialize_mass)()), float (* initialize_mass)()) {

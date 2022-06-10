@@ -9,3 +9,4 @@ src/sim/10k3600.sim
 src/sim/test.sim
 src/playback/3000slower.sim
 src/playback/4000slow.sim
+src/sim/40k12ksq.sim

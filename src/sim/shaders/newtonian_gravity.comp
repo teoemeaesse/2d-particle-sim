@@ -1,6 +1,8 @@
-#version 430
+#version 450
 
-layout(local_size_x = 8, local_size_y = 1, local_size_z = 1) in;
+#extension GL_ARB_gpu_shader_int64 : require
+
+layout(local_size_x = 512, local_size_y = 1, local_size_z = 1) in;
 layout(std430, binding = 1) buffer i_data
 {
     float initial_frame[];
@@ -10,21 +12,21 @@ layout(std430, binding = 2) buffer f_data
     float final_frame[];
 };
 
-const int n = 100;
+const int n = 40000;
 
-const int INVOCATION_TOTAL = 64;
+const int INVOCATION_TOTAL = 64 * 64 * 64 * 512;
 
 #define PARTICLE_SIZE 5
-#define G 0.01f
+#define G 0.0001f
 
 void main() {
-    int k = int(gl_GlobalInvocationID.x),
+    int64_t k = int64_t(gl_GlobalInvocationID.x);
 
-    int start, end;
-    int remainder = int(mod(n, INVOCATION_TOTAL)),
-        n0 = floor(n / INVOCATION_TOTAL);
+    int64_t start, end;
+    int64_t remainder = int64_t(n - (INVOCATION_TOTAL * int64_t(n / INVOCATION_TOTAL))),
+            n0 = int64_t(n / INVOCATION_TOTAL);
     
-    start = min(k, remainder) * (n0 + 1) + max(0, (k - remainder) * n0);
+    start = min(k, remainder) * (n0 + int64_t(1)) + max(int64_t(0), (k - remainder) * n0);
     end = start + n0;
     if(k < remainder)
         end++;
@@ -32,7 +34,7 @@ void main() {
     if(INVOCATION_TOTAL > n && k >= remainder)
         return;
 
-    for(int i = start; i < end; i++) {
+    for(int i = int(double(start)); i < int(double(end)); i++) {
         float x = initial_frame[i * PARTICLE_SIZE],
               y = initial_frame[i * PARTICLE_SIZE + 1],
               xv = initial_frame[i * PARTICLE_SIZE + 2],
