@@ -12,7 +12,7 @@ layout(std430, binding = 2) buffer f_data
     float final_frame[];
 };
 
-const int n = 40000;
+const int n = 10000;
 
 const int INVOCATION_TOTAL = 64 * 64 * 64 * 512;
 

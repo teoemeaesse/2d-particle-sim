@@ -95,7 +95,7 @@ int start_sim(settings_t * settings) {
     glShaderStorageBlockBinding(compute_program, loc_i, 1);
     glShaderStorageBlockBinding(compute_program, loc_f, 2);
     
-    float * particles = initialize_particles(settings->particle_count, square_initializer, uniform_mass_initializer),
+    float * particles = initialize_particles(settings->particle_count, circular_initializer, uniform_mass_initializer),
           * updated_particles = PARTICLE_CALLOC(settings->particle_count);
 
     glNamedBufferData(ssbo_f, PARTICLE_SIZE * settings->particle_count, particles, GL_DYNAMIC_DRAW);
