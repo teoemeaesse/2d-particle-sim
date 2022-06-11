@@ -1,7 +1,7 @@
 #include <GLFW/glfw3.h>
 
-#include "simulator.h"
 #include "compute.h"
+#include "io.h"
 #include "common.h"
 
 #include <stdio.h>
@@ -9,80 +9,46 @@
 
 #include <unistd.h>
 
-int init_output_file(settings_t * settings) {
-    FILE * fp = fopen(settings->filename, "w");
-
-    if(fp == NULL) {
-        ERROR(ERR_FOPEN(settings->filename), -1);
-    }
-
-    if(fwrite(settings, sizeof(settings_t), 1, fp) != 1) {
-        if(fclose(fp) != 0) {
-            ERROR(ERR_FCLOSE(settings->filename), -1);
-        }
-        ERROR(ERR_FWRITE(settings->filename), -1);
-    }
-
-    if(fclose(fp) != 0) {
-        ERROR(ERR_FCLOSE(settings->filename), -1);
-    }
-
-    return 0;
-}
-
-int main(int argc, char * argv[]) {
-    settings_t * settings = (settings_t *) calloc(1, sizeof(settings_t));
-    if(read_settings(settings, argc, argv) == -1) {
-        free(settings);
-        return -1;
-    }
-
-    LOG_SETTINGS(settings);
-
-    init_output_file(settings);
-
+GLFWwindow * init_glfw_context() {
     if (!glfwInit())
-        return 1;
-        
+        return NULL;
+
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 4);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_VISIBLE, 0);
 
-    GLFWwindow * w = glfwCreateWindow(100, 100, "simulator", NULL, NULL);
-    if(w == NULL) {
+    GLFWwindow * window = glfwCreateWindow(1, 1, "", NULL, NULL);
+    if(window == NULL) {
         glfwTerminate();
-        return 1;
+        return NULL;
     }
-    glfwMakeContextCurrent(w);
 
-    start_sim(settings);
+    glfwMakeContextCurrent(window);
 
-    free(settings);
-
-    glfwTerminate();
-
-    return 0;
+    return window;
 }
 
-int read_settings(settings_t * settings, int argc, char * argv[]) {
-    if(argc != 4) {
-        LOG(INFO_USAGE);
-        ERROR(ERR_INVALID_ARGC(argc - 1), -1);
-    }
-    
-    if(!is_integer(argv[ARG_PARTICLE_N])) {
-        ERROR(ERR_INVALID_PARTICLE_N(argv[ARG_PARTICLE_N]), -1);
-    }
+void destroy_glfw_context(GLFWwindow * window) {
+    glfwDestroyWindow(window);
+    glfwTerminate();
+}
 
-    if(!is_integer(argv[ARG_FRAMES]) || atoi(argv[ARG_FRAMES]) == 0) {
-        ERROR(ERR_INVALID_DURATION(argv[ARG_FRAMES]), -1);
-    }
+int main(int argc, char * argv[]) {
+    settings_t * settings = read_settings(argc, argv);
+    if(settings == NULL) return EXIT_FAILURE;
 
-    settings->filename = argv[ARG_FILE];
-    settings->particle_count = atoi(argv[ARG_PARTICLE_N]);
-    settings->frames = atoi(argv[ARG_FRAMES]);
+    FILE * out = init_output_file(settings);
+    if(out == NULL) return EXIT_FAILURE;
 
-    return 0;
+    GLFWwindow * window = init_glfw_context();
+    if(window == NULL) return EXIT_FAILURE;
+
+    start_sim(settings, out);
+
+    destroy_glfw_context(window);
+    free_io(settings, out);
+
+    return EXIT_SUCCESS;
 }

@@ -3,10 +3,6 @@ src/playback/10ksquare3600f.sim
 .vscode/dryrun.log
 .vscode/settings.json
 .vscode/targets.log
-src/sim/big.sim
-src/playback/test.sim
-src/sim/10k3600.sim
-src/sim/test.sim
-src/playback/3000slower.sim
-src/playback/4000slow.sim
 src/sim/40k12ksq.sim
+src/sim/circle.sim
+src/sim/test.sim

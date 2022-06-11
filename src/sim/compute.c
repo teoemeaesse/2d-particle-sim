@@ -2,37 +2,16 @@
 
 #include "compute.h"
 #include "particle.h"
+#include "io.h"
 #include "common.h"
 
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 
-FILE * export_fp;
-
-int open_fp(settings_t * settings) {
-    export_fp = fopen(settings->filename, "a");
-
-    if(export_fp == NULL) {
-        ERROR(ERR_FOPEN(settings->filename), -1);
-    }
-
-    return 0;
-}
-
-int close_fp(settings_t * settings) {
-    if(fclose(export_fp) != 0) {
-        ERROR(ERR_FCLOSE(settings->filename), -1);
-    }
-
-    return 0;
-}
-
-int export_frame(settings_t * settings, float * particles) {
-    if(fwrite(particles, PARTICLE_SIZE, settings->particle_count, export_fp) != settings->particle_count) {
-        if(fclose(export_fp) != 0) {
-            ERROR(ERR_FCLOSE(settings->filename), -1);
-        }
+int export_frame(settings_t * settings, float * particles, FILE * out) {
+    if(fwrite(particles, PARTICLE_SIZE, settings->particle_count, out) != settings->particle_count) {
+        close_file(settings, out);
         ERROR(ERR_FWRITE(settings->filename), -1);
     }
 
@@ -72,11 +51,11 @@ void gl_clear_errors() {
 void gl_check_error() {
     unsigned int error;
     while((error = glGetError())) {
-        printf("[opengl error]: %d\n", error);
+        LOG_ERROR_GL(error);
     }
 }
 
-int start_sim(settings_t * settings) {
+int start_sim(settings_t * settings, FILE * out) {
     char * src = read_file_as_string("shaders/newtonian_gravity.comp");
     unsigned int compute_shader = compile_shader(src, GL_COMPUTE_SHADER);
     free(src);
@@ -100,7 +79,7 @@ int start_sim(settings_t * settings) {
 
     glNamedBufferData(ssbo_f, PARTICLE_SIZE * settings->particle_count, particles, GL_DYNAMIC_DRAW);
 
-    int workGroupSizes[3] = { 0 };
+    /*int workGroupSizes[3] = { 0 };
     glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 0, &workGroupSizes[0]);
     glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 1, &workGroupSizes[1]);
     glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 2, &workGroupSizes[2]);
@@ -110,28 +89,44 @@ int start_sim(settings_t * settings) {
     glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 2, &workGroupCounts[2]);
 
     printf("Sizes: ( %d ; %d ; %d )\nCounts: ( %d ; %d ; %d )\n", workGroupSizes[0], workGroupSizes[1], workGroupSizes[2], workGroupCounts[0], workGroupCounts[1], workGroupCounts[2]);
+    */
+
+
+    glUseProgram(compute_program);
+    glNamedBufferData(ssbo_i, PARTICLE_SIZE * settings->particle_count, particles, GL_DYNAMIC_DRAW);
     
-    open_fp(settings);
+    int p = 0, lp = 0;
 
     for(int i = 0; i < settings->frames; i++) {
-        glNamedBufferData(ssbo_i, PARTICLE_SIZE * settings->particle_count, i == 0 ? particles : updated_particles, GL_DYNAMIC_DRAW);
+        if(i > 0) glNamedBufferSubData(ssbo_i, 0, PARTICLE_SIZE * settings->particle_count, updated_particles);
 
-        glUseProgram(compute_program);
         glDispatchCompute(64 * 64 * 64, 1, 1);
         glMemoryBarrier(GL_ALL_BARRIER_BITS);
         
         glGetNamedBufferSubData(ssbo_f, 0, PARTICLE_SIZE * settings->particle_count, updated_particles);
 
-        if(export_frame(settings, updated_particles) == -1) {
+        if(export_frame(settings, updated_particles, out) == -1) {
             ERROR(ERR_EXPORT_FRAME(i), -1);
         }
-
-        LOG_INFO_FRAME(i, settings->frames, (float) i / settings->frames * 100.0f);
+        
+        p = (int) ((float) i / settings->frames * 100.0f);
+        if(p != lp) {
+            LOG_INFO_FRAME(i, settings->frames, p);
+            fflush(stdout);
+        }
+        lp = p;
     }
 
-    close_fp(settings);
+    LOG_INFO_DONE(settings->filename);
+
+    glDeleteShader(compute_shader);
+    glDetachShader(compute_program, compute_shader);
+    glDeleteProgram(compute_program);
 
     free(particles);
+    free(updated_particles);
 
+    gl_check_error();
+    
     return 0;
 }

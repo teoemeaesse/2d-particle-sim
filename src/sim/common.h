@@ -23,8 +23,10 @@
 #define ERROR(M, R) printf(M); return R
 #define LOG(M) printf("%s", M);
 
-#define LOG_INFO_FRAME(C, T, P) printf("[frame] %d / %d done (%f%%).\n", C, T, P)
-#define LOG_SETTINGS(S) printf("[settings]: n = %d\n[settings]: t = %d\n", S->particle_count, S->frames)
+#define LOG_INFO_FRAME(C, T, P) printf("\r[frame]: %d / %d done (%d%%).", C, T, P);
+#define LOG_INFO_DONE(F) printf("\n[frame]: Finished exporting simulation to \"%s\"!\n", F);
+#define LOG_INFO_SETTINGS(S) printf("[settings]: n = %d\n[settings]: t = %d\n", S->particle_count, S->frames);
+#define LOG_ERROR_GL(E) printf("[opengl]: Error code %d\n", E);
 
 #define THREAD_COUNT 16
 #define PARTICLE_SIZE 5 * sizeof(float)
