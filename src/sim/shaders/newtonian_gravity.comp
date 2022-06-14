@@ -2,7 +2,9 @@
 
 #extension GL_ARB_gpu_shader_int64 : require
 
-layout(local_size_x = 512, local_size_y = 1, local_size_z = 1) in;
+const int INVOCATIONS = @;
+
+layout(local_size_x = INVOCATIONS, local_size_y = 1, local_size_z = 1) in;
 layout(std430, binding = 1) buffer i_data
 {
     float initial_frame[];
@@ -12,12 +14,10 @@ layout(std430, binding = 2) buffer f_data
     float final_frame[];
 };
 
-const int n = 10000;
+uniform int n, work_groups, invocations, particle_size;
+uniform float g;
 
-const int INVOCATION_TOTAL = 64 * 64 * 64 * 512;
-
-#define PARTICLE_SIZE 5
-#define G 0.0001f
+int INVOCATION_TOTAL = work_groups * INVOCATIONS;
 
 void main() {
     int64_t k = int64_t(gl_GlobalInvocationID.x);
@@ -35,31 +35,31 @@ void main() {
         return;
 
     for(int i = int(double(start)); i < int(double(end)); i++) {
-        float x = initial_frame[i * PARTICLE_SIZE],
-              y = initial_frame[i * PARTICLE_SIZE + 1],
-              xv = initial_frame[i * PARTICLE_SIZE + 2],
-              yv = initial_frame[i * PARTICLE_SIZE + 3],
+        float x = initial_frame[i * particle_size],
+              y = initial_frame[i * particle_size + 1],
+              xv = initial_frame[i * particle_size + 2],
+              yv = initial_frame[i * particle_size + 3],
               xa = 0, ya = 0;
 
         for(int j = 0; j < n; j++) {
-            float x2 = initial_frame[j * PARTICLE_SIZE], 
-                  y2 = initial_frame[j * PARTICLE_SIZE + 1],
-                  m = initial_frame[j * PARTICLE_SIZE + 4];
+            float x2 = initial_frame[j * particle_size], 
+                  y2 = initial_frame[j * particle_size + 1],
+                  m = initial_frame[j * particle_size + 4];
             if(x == x2 && y == y2)
                 continue;
             float dx = x2 - x, dy = y2 - y,
                   len2 = dx * dx + dy * dy,
-                  gxm = G * m;
+                  gxm = g * m;
             xa += dx * gxm / len2;
             ya += dy * gxm / len2;
         }
 
-        final_frame[i * PARTICLE_SIZE] = x + xv;
-        final_frame[i * PARTICLE_SIZE + 1] = y + yv;
+        final_frame[i * particle_size] = x + xv;
+        final_frame[i * particle_size + 1] = y + yv;
 
-        final_frame[i * PARTICLE_SIZE + 2] = xv + xa;
-        final_frame[i * PARTICLE_SIZE + 3] = yv + ya;
+        final_frame[i * particle_size + 2] = xv + xa;
+        final_frame[i * particle_size + 3] = yv + ya;
 
-        final_frame[i * PARTICLE_SIZE + 4] = initial_frame[i * PARTICLE_SIZE + 4];
+        final_frame[i * particle_size + 4] = initial_frame[i * particle_size + 4];
     }
 }

@@ -9,9 +9,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-int export_frame(settings_t * settings, float * particles, FILE * out) {
+int export_frame(info_t * settings, float * particles, FILE * out) {
     if(fwrite(particles, PARTICLE_SIZE, settings->particle_count, out) != settings->particle_count) {
-        close_file(settings, out);
+        close_file(settings->filename, out);
         ERROR(ERR_FWRITE(settings->filename), -1);
     }
 
@@ -55,10 +55,12 @@ void gl_check_error() {
     }
 }
 
-int start_sim(settings_t * settings, FILE * out) {
+int start_sim(info_t * settings, FILE * out) {
     char * src = read_file_as_string("shaders/newtonian_gravity.comp");
-    unsigned int compute_shader = compile_shader(src, GL_COMPUTE_SHADER);
+    char * v_src = inject_invocations(src, settings->config);
+    unsigned int compute_shader = compile_shader(v_src, GL_COMPUTE_SHADER);
     free(src);
+    free(v_src);
     unsigned int compute_program = glCreateProgram();
     glAttachShader(compute_program, compute_shader);
     glLinkProgram(compute_program);
@@ -91,16 +93,19 @@ int start_sim(settings_t * settings, FILE * out) {
     printf("Sizes: ( %d ; %d ; %d )\nCounts: ( %d ; %d ; %d )\n", workGroupSizes[0], workGroupSizes[1], workGroupSizes[2], workGroupCounts[0], workGroupCounts[1], workGroupCounts[2]);
     */
 
-
     glUseProgram(compute_program);
     glNamedBufferData(ssbo_i, PARTICLE_SIZE * settings->particle_count, particles, GL_DYNAMIC_DRAW);
     
-    int p = 0, lp = 0;
+    glUniform1i(glGetUniformLocation(compute_program, "n"), settings->config->n);
+    glUniform1i(glGetUniformLocation(compute_program, "work_groups"), settings->config->work_groups);
+    glUniform1i(glGetUniformLocation(compute_program, "particle_size"), settings->config->particle_attr_c);
+    glUniform1f(glGetUniformLocation(compute_program, "g"), settings->config->g);
 
+    int p = 0, lp = 0;
     for(int i = 0; i < settings->frames; i++) {
         if(i > 0) glNamedBufferSubData(ssbo_i, 0, PARTICLE_SIZE * settings->particle_count, updated_particles);
-
-        glDispatchCompute(64 * 64 * 64, 1, 1);
+    
+        glDispatchCompute(64 * 64, 1, 1);
         glMemoryBarrier(GL_ALL_BARRIER_BITS);
         
         glGetNamedBufferSubData(ssbo_f, 0, PARTICLE_SIZE * settings->particle_count, updated_particles);
@@ -118,6 +123,7 @@ int start_sim(settings_t * settings, FILE * out) {
     }
 
     LOG_INFO_DONE(settings->filename);
+    gl_check_error();
 
     glDeleteShader(compute_shader);
     glDetachShader(compute_program, compute_shader);
@@ -125,8 +131,6 @@ int start_sim(settings_t * settings, FILE * out) {
 
     free(particles);
     free(updated_particles);
-
-    gl_check_error();
     
     return 0;
 }

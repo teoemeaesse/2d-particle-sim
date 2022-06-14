@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <string.h>
 
 int is_integer(char * str) {
     while(*str != '\0')
@@ -54,4 +55,9 @@ char * read_file_as_string(const char * file) {
     }
 
     return buffer;
+}
+
+void str_to_upper(char * str) {
+    for(int i = 0; i < strlen(str); i++)
+        str[i] = toupper(str[i]);
 }

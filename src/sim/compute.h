@@ -9,6 +9,6 @@ unsigned int compile_shader(const char * src, unsigned int type);
 
 /* Starts the simulation and exports the result to file out
 */
-int start_sim(settings_t * settings, FILE * out);
+int start_sim(info_t * settings, FILE * out);
 
 #endif

@@ -1,6 +1,9 @@
 #ifndef __COMMON_H__
 #define __COMMON_H__
 
+enum value_type {VALUE_INT, VALUE_STR, VALUE_FLT};
+enum parser_state {PARSING_NONE, PARSING_KEY, PARSING_NUMBER, PARSING_STRING, PARSING_WHITESPACE, PARSING_FLOAT, PARSING_INTEGER};
+
 #define ARG_FILE 1
 #define ARG_PARTICLE_N 2
 #define ARG_FRAMES 3
@@ -17,6 +20,8 @@
 //#define ERR_INVALID_FRAMERATE(F) "[error]: Received invalid framerate value (%s).\n", F
 #define ERR_SHADER_COMPILE(T) "[error]: Error compiling %s shader.\n", T == GL_VERTEX_SHADER ? "vertex" : (T == GL_COMPUTE_SHADER ? "compute" : "fragment")
 #define ERR_EXPORT_FRAME(F) "[error]: Error exporting frame #%d.\n", F
+#define ERR_INVALID_CONFIG(F, L, N) "[error]: Error reading config file (%s): Syntax error (line %d)\n\"%s\".\n", F, N, L
+#define ERR_INVALID_VALUE(K, T) "[error]: Error parsing config file: %s should not be %s type.\n", K, T == VALUE_INT ? "integer" : (T == VALUE_STR ? "string" : "float")
 
 #define INFO_USAGE "Usage: ./simulator [filename] [particle_count] [frames]\n"
 
@@ -33,15 +38,19 @@
 #define PARTICLE_CALLOC(S) (float *) calloc(S, PARTICLE_SIZE)
 #define GRAVITATIONAL_CONSTANT 0.00001f
 
-#define BUSY 1
-#define IDLE 0
-#define STOP 1
-#define CONTINUE 0
+#define DEFAULT_PARTICLE_ATTR_COUNT 5
+#define DEFAULT_G 0.01f
+#define DEFAULT_WORK_GROUPS 64
+#define DEFAULT_INVOCATIONS 64
+#define DEFAULT_N 100
 
-// returns whether a null terminated string represents an integer
+// Returns whether a null terminated string represents an integer
 int is_integer(char * str);
 
-// read in file as null-terminated string
+// Read in file as null-terminated string
 char * read_file_as_string(const char * file);
+
+// Capitalizes all the characters in str
+void str_to_upper(char * str);
 
 #endif
