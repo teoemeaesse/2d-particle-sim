@@ -9,8 +9,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-int export_frame(info_t * settings, float * particles, FILE * out) {
-    if(fwrite(particles, PARTICLE_SIZE, settings->particle_count, out) != settings->particle_count) {
+int export_frame(settings_t * settings, float * particles, FILE * out) {
+    if(fwrite(particles, PARTICLE_SIZE, settings->n, out) != settings->n) {
         close_file(settings->filename, out);
         ERROR(ERR_FWRITE(settings->filename), -1);
     }
@@ -55,9 +55,9 @@ void gl_check_error() {
     }
 }
 
-int start_sim(info_t * settings, FILE * out) {
+int start_sim(settings_t * settings, FILE * out) {
     char * src = read_file_as_string("shaders/newtonian_gravity.comp");
-    char * v_src = inject_invocations(src, settings->config);
+    char * v_src = inject_invocations(src, settings);
     unsigned int compute_shader = compile_shader(v_src, GL_COMPUTE_SHADER);
     free(src);
     free(v_src);
@@ -76,10 +76,10 @@ int start_sim(info_t * settings, FILE * out) {
     glShaderStorageBlockBinding(compute_program, loc_i, 1);
     glShaderStorageBlockBinding(compute_program, loc_f, 2);
     
-    float * particles = initialize_particles(settings->particle_count, circular_initializer, uniform_mass_initializer),
-          * updated_particles = PARTICLE_CALLOC(settings->particle_count);
+    float * particles = initialize_particles(settings->n, circular_initializer, uniform_mass_initializer),
+          * updated_particles = PARTICLE_CALLOC(settings->n);
 
-    glNamedBufferData(ssbo_f, PARTICLE_SIZE * settings->particle_count, particles, GL_DYNAMIC_DRAW);
+    glNamedBufferData(ssbo_f, PARTICLE_SIZE * settings->n, particles, GL_DYNAMIC_DRAW);
 
     /*int workGroupSizes[3] = { 0 };
     glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 0, &workGroupSizes[0]);
@@ -94,21 +94,21 @@ int start_sim(info_t * settings, FILE * out) {
     */
 
     glUseProgram(compute_program);
-    glNamedBufferData(ssbo_i, PARTICLE_SIZE * settings->particle_count, particles, GL_DYNAMIC_DRAW);
+    glNamedBufferData(ssbo_i, PARTICLE_SIZE * settings->n, particles, GL_DYNAMIC_DRAW);
     
-    glUniform1i(glGetUniformLocation(compute_program, "n"), settings->config->n);
-    glUniform1i(glGetUniformLocation(compute_program, "work_groups"), settings->config->work_groups);
-    glUniform1i(glGetUniformLocation(compute_program, "particle_size"), settings->config->particle_attr_c);
-    glUniform1f(glGetUniformLocation(compute_program, "g"), settings->config->g);
+    glUniform1i(glGetUniformLocation(compute_program, "n"), settings->n);
+    glUniform1i(glGetUniformLocation(compute_program, "work_groups"), settings->work_groups);
+    glUniform1i(glGetUniformLocation(compute_program, "particle_size"), settings->particle_attr_c);
+    glUniform1f(glGetUniformLocation(compute_program, "g"), settings->g);
 
     int p = 0, lp = 0;
     for(int i = 0; i < settings->frames; i++) {
-        if(i > 0) glNamedBufferSubData(ssbo_i, 0, PARTICLE_SIZE * settings->particle_count, updated_particles);
+        if(i > 0) glNamedBufferSubData(ssbo_i, 0, PARTICLE_SIZE * settings->n, updated_particles);
     
         glDispatchCompute(64 * 64, 1, 1);
         glMemoryBarrier(GL_ALL_BARRIER_BITS);
         
-        glGetNamedBufferSubData(ssbo_f, 0, PARTICLE_SIZE * settings->particle_count, updated_particles);
+        glGetNamedBufferSubData(ssbo_f, 0, PARTICLE_SIZE * settings->n, updated_particles);
 
         if(export_frame(settings, updated_particles, out) == -1) {
             ERROR(ERR_EXPORT_FRAME(i), -1);

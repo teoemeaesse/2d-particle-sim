@@ -36,7 +36,7 @@ void destroy_glfw_context(GLFWwindow * window) {
 }
 
 int main(int argc, char * argv[]) {
-    info_t * settings = read_settings(argc, argv);
+    settings_t * settings = read_settings(argc, argv);
     if(settings == NULL) return EXIT_FAILURE;
 
     FILE * out = init_output_file(settings);

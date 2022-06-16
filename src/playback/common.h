@@ -24,7 +24,7 @@ typedef struct {
 #define ERROR(M, R) printf(M); return R
 #define LOG(M) printf("%s", M);
 
-#define LOG_LOAD(S) printf("[load_simulation]: n = %d\n[load_simulation]: t = %d\n[load_simulation]: simulation size = %ld kb\n", S->settings->particle_count, S->settings->frames, S->settings->particle_count * PARTICLE_SIZE * S->settings->frames / 1024)
+#define LOG_LOAD(S) printf("[load_simulation]: n = %d\n[load_simulation]: t = %d\n[load_simulation]: simulation size = %ld kb\n", S->settings->n, S->settings->frames, S->settings->n * PARTICLE_SIZE * S->settings->frames / 1024)
 
 // PIXELS / SECOND
 #define PAN_SPEED 480.0f

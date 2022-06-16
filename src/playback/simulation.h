@@ -5,7 +5,10 @@
 
 typedef struct {
     char * filename;
-    int particle_count, frames;
+    int n, frames, 
+    work_groups, invocations,
+     particle_attr_c;
+    float g;
 } settings_t;
 
 typedef struct {

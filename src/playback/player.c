@@ -79,8 +79,8 @@ void render(unsigned int point_shader) {
     const float u_zoom = normalize_zoom();
     glUniform1f(glGetUniformLocation(point_shader, "zoom"), u_zoom);
 
-    glBufferData(GL_ARRAY_BUFFER, 5 * sim->settings->particle_count * sizeof(float), sim->particles + sim->settings->particle_count * sim->frame, GL_DYNAMIC_DRAW);
-    glDrawArrays(GL_POINTS, 0, sim->settings->particle_count);
+    glBufferData(GL_ARRAY_BUFFER, 5 * sim->settings->n * sizeof(float), sim->particles + sim->settings->n * sim->frame, GL_DYNAMIC_DRAW);
+    glDrawArrays(GL_POINTS, 0, sim->settings->n);
 
     glfwSwapBuffers(window.handle);
 }

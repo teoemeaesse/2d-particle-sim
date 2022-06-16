@@ -24,7 +24,7 @@ int close_file(char * filename, FILE * fp) {
     return 0;
 }
 
-char * inject_invocations(char * file, config_t * config) {
+char * inject_invocations(char * file, settings_t * config) {
     int digits = floor(log10(abs(config->invocations)) + 1);
     char * v_src = (char *) malloc((strlen(file) + digits) * sizeof(char)),
          * invocations_str = (char *) malloc(digits * sizeof(char));
@@ -48,9 +48,11 @@ char * inject_invocations(char * file, config_t * config) {
     return v_src;
 }
 
-config_t * default_config() {
-    config_t * config = (config_t *) malloc(sizeof(config_t));
+settings_t * default_config() {
+    settings_t * config = (settings_t *) malloc(sizeof(settings_t));
 
+    config->filename = NULL;
+    config->frames = DEFAULT_FRAMES;
     config->g = DEFAULT_G;
     config->invocations = DEFAULT_INVOCATIONS;
     config->n = DEFAULT_N;
@@ -60,52 +62,32 @@ config_t * default_config() {
     return config;
 }
 
-int assign_config_field(char * key, char * value, int value_type, config_t * config) {
+int assign_config_field(char * key, char * value, enum value_type valid_value, settings_t * config) {
     str_to_upper(key);
 
-    if(strcmp(key, "G") == 0 || strcmp(key, "GRAVITY") == 0) {
-        if(value_type != VALUE_FLT) {
-            ERROR(ERR_INVALID_VALUE(key, value_type), -1);
-        }
-        config->g = atof(value);
-    }
+    if(str_in_arr(key, VALID_G_KEYS, VALID_G_KEYS_SIZE))
+        return parse_float(&config->g, key, value, VALUE_FLT);
 
-    else if(strcmp(key, "INVOCATIONS") == 0) {
-        if(value_type != VALUE_INT) {
-            ERROR(ERR_INVALID_VALUE(key, value_type), -1);
-        }
-        config->invocations = atoi(value);
-    }
+    if(str_in_arr(key, VALID_INVOCATIONS_KEYS, VALID_INVOCATIONS_KEYS_SIZE))
+        return parse_integer(&config->invocations, key, value, VALUE_INT);
 
-    else if(strcmp(key, "N") == 0 || strcmp(key, "PARTICLES") == 0 || strcmp(key, "COUNT") == 0) {
-        if(value_type != VALUE_INT) {
-            ERROR(ERR_INVALID_VALUE(key, value_type), -1);
-        }
-        config->n = atoi(value);
-    }
+    if(str_in_arr(key, VALID_N_KEYS, VALID_N_KEYS_SIZE))
+        return parse_integer(&config->n, key, value, VALUE_INT);
 
-    else if(strcmp(key, "PARTICLE_SIZE") == 0 || strcmp(key, "PARTICLE_ATTRIBUTES") == 0) {
-        if(value_type != VALUE_INT) {
-            ERROR(ERR_INVALID_VALUE(key, value_type), -1);
-        }
-        config->particle_attr_c = atoi(value);
-    }
+    if(str_in_arr(key, VALID_PARTICLE_SIZE_KEYS, VALID_PARTICLE_SIZE_KEYS_SIZE))
+        return parse_integer(&config->particle_attr_c, key, value, VALUE_INT);
 
-    else if(strcmp(key, "WORK_GROUPS") == 0) {
-        if(value_type != VALUE_INT) {
-            ERROR(ERR_INVALID_VALUE(key, value_type), -1);
-        }
-        config->work_groups = atoi(value);
-    }
+    if(str_in_arr(key, VALID_WORK_GROUPS_KEYS, VALID_WORK_GROUPS_KEYS_SIZE))
+        return parse_integer(&config->work_groups, key, value, VALUE_INT);
 
-    return 0;
+    return -1;
 }
 
-config_t * parse_config(char * filename) {
+settings_t * parse_config(char * filename) {
     FILE * fp = open_file(filename, "r");
     if(fp == NULL) return NULL;
 
-    config_t * config = default_config();
+    settings_t * config = default_config();
 
     const int BUFFER_SIZE = 64;
     char buffer[BUFFER_SIZE];
@@ -201,7 +183,7 @@ config_t * parse_config(char * filename) {
     return config;
 }
 
-int free_io(info_t * settings, FILE * fp) {
+int free_io(settings_t * settings, FILE * fp) {
     if(close_file(settings->filename, fp) == -1) return -1;
 
     free(settings);
@@ -209,13 +191,11 @@ int free_io(info_t * settings, FILE * fp) {
     return 0;
 }
 
-FILE * init_output_file(info_t * settings) {
+FILE * init_output_file(settings_t * settings) {
     FILE * fp = open_file(settings->filename, "w");
     if(fp == NULL) return NULL;
 
-    serialization_buffer_t * serialization_buffer = serialize_settings(settings);
-    // TODO
-    if(fwrite(settings, sizeof(info_t), 1, fp) != 1) {
+    if(fwrite(settings, sizeof(settings_t), 1, fp) != 1) {
         if(close_file(settings->filename, fp) == -1) return NULL;
         ERROR(ERR_FWRITE(settings->filename), NULL);
     }
@@ -223,28 +203,17 @@ FILE * init_output_file(info_t * settings) {
     return fp;
 }
 
-info_t * read_settings(int argc, char * argv[]) {
-    if(argc != 4) {
+settings_t * read_settings(int argc, char * argv[]) {
+    if(argc != 3) {
         LOG(INFO_USAGE);
         ERROR(ERR_INVALID_ARGC(argc - 1), NULL);
     }
-    
-    if(!is_integer(argv[ARG_PARTICLE_N])) {
-        ERROR(ERR_INVALID_PARTICLE_N(argv[ARG_PARTICLE_N]), NULL);
-    }
 
-    if(!is_integer(argv[ARG_FRAMES]) || atoi(argv[ARG_FRAMES]) == 0) {
-        ERROR(ERR_INVALID_DURATION(argv[ARG_FRAMES]), NULL);
-    }
+    settings_t * settings = parse_config(argv[ARG_CONFIG_FILE]);
+    if(settings == NULL) 
+        return NULL;
 
-    info_t * settings = (info_t *) calloc(1, sizeof(info_t));
-
-    settings->filename = argv[ARG_FILE];
-    settings->particle_count = atoi(argv[ARG_PARTICLE_N]);
-    settings->frames = atoi(argv[ARG_FRAMES]);
-
-    char config_file[12] = "test.config";
-    settings->config = parse_config(config_file);
+    settings->filename = argv[ARG_OUTPUT_FILE];
 
     LOG_INFO_SETTINGS(settings);
 

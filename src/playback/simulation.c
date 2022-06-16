@@ -46,7 +46,7 @@ simulation_t * load_simulation(int argc, char * argv[]) {
         ERROR(ERR_FREAD(argv[ARG_FILE]), NULL);
     }
 
-    size_t frame_size = sim->settings->particle_count * PARTICLE_SIZE;
+    size_t frame_size = sim->settings->n * PARTICLE_SIZE;
     sim->particles = (particle_t *) malloc(frame_size * sim->settings->frames);
 
     size_t r = fread(sim->particles, frame_size, sim->settings->frames, fp);
