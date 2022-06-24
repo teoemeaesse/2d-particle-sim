@@ -19,6 +19,7 @@ simulation_t * create_simulation(int framerate) {
 
 simulation_t * load_simulation(int argc, char * argv[]) {
     if(argc != 3) {
+        LOG(INFO_USAGE);
         ERROR(ERR_INVALID_ARGC(argc - 1), NULL);
     }
 

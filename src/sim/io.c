@@ -92,7 +92,7 @@ settings_t * parse_config(char * filename) {
     FILE * fp = open_file(filename, "r");
     if(fp == NULL) return NULL;
 
-    settings_t * config = default_config();
+    settings_t * config = default_settings();
 
     const int BUFFER_SIZE = 64;
     char buffer[BUFFER_SIZE];

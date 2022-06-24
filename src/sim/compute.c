@@ -106,7 +106,7 @@ int start_sim(settings_t * settings, FILE * out) {
     for(int i = 0; i < settings->frames; i++) {
         if(i > 0) glNamedBufferSubData(ssbo_i, 0, frame_size, updated_particles);
     
-        glDispatchCompute(64, 64, 64);
+        glDispatchCompute(settings->work_groups, 1, 1);
         glMemoryBarrier(GL_ALL_BARRIER_BITS);
         
         glGetNamedBufferSubData(ssbo_f, 0, frame_size, updated_particles);
