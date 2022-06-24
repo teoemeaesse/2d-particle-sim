@@ -10,7 +10,7 @@
 #include <stdio.h>
 
 int export_frame(settings_t * settings, float * particles, FILE * out) {
-    if(fwrite(particles, PARTICLE_SIZE, settings->n, out) != settings->n) {
+    if(fwrite(particles, settings->particle_attr_c * sizeof(float), settings->n, out) != settings->n) {
         close_file(settings->filename, out);
         ERROR(ERR_FWRITE(settings->filename), -1);
     }
@@ -75,13 +75,15 @@ int start_sim(settings_t * settings, FILE * out) {
     loc_f = glGetProgramResourceIndex(compute_program, GL_SHADER_STORAGE_BLOCK, "f_data");
     glShaderStorageBlockBinding(compute_program, loc_i, 1);
     glShaderStorageBlockBinding(compute_program, loc_f, 2);
+
+    size_t frame_size = settings->particle_attr_c * settings->n * sizeof(float);
     
-    float * particles = initialize_particles(settings->n, circular_initializer, uniform_mass_initializer),
-          * updated_particles = PARTICLE_CALLOC(settings->n);
+    float * particles = initialize_particles(settings, circular_initializer, uniform_mass_initializer),
+          * updated_particles = (float *) calloc(settings->n, settings->particle_attr_c * sizeof(float));
 
-    glNamedBufferData(ssbo_f, PARTICLE_SIZE * settings->n, particles, GL_DYNAMIC_DRAW);
+    glNamedBufferData(ssbo_f, frame_size, particles, GL_DYNAMIC_DRAW);
 
-    /*int workGroupSizes[3] = { 0 };
+    int workGroupSizes[3] = { 0 };
     glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 0, &workGroupSizes[0]);
     glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 1, &workGroupSizes[1]);
     glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 2, &workGroupSizes[2]);
@@ -91,10 +93,9 @@ int start_sim(settings_t * settings, FILE * out) {
     glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 2, &workGroupCounts[2]);
 
     printf("Sizes: ( %d ; %d ; %d )\nCounts: ( %d ; %d ; %d )\n", workGroupSizes[0], workGroupSizes[1], workGroupSizes[2], workGroupCounts[0], workGroupCounts[1], workGroupCounts[2]);
-    */
 
     glUseProgram(compute_program);
-    glNamedBufferData(ssbo_i, PARTICLE_SIZE * settings->n, particles, GL_DYNAMIC_DRAW);
+    glNamedBufferData(ssbo_i, frame_size, particles, GL_DYNAMIC_DRAW);
     
     glUniform1i(glGetUniformLocation(compute_program, "n"), settings->n);
     glUniform1i(glGetUniformLocation(compute_program, "work_groups"), settings->work_groups);
@@ -103,12 +104,12 @@ int start_sim(settings_t * settings, FILE * out) {
 
     int p = 0, lp = 0;
     for(int i = 0; i < settings->frames; i++) {
-        if(i > 0) glNamedBufferSubData(ssbo_i, 0, PARTICLE_SIZE * settings->n, updated_particles);
+        if(i > 0) glNamedBufferSubData(ssbo_i, 0, frame_size, updated_particles);
     
-        glDispatchCompute(64 * 64, 1, 1);
+        glDispatchCompute(64, 64, 64);
         glMemoryBarrier(GL_ALL_BARRIER_BITS);
         
-        glGetNamedBufferSubData(ssbo_f, 0, PARTICLE_SIZE * settings->n, updated_particles);
+        glGetNamedBufferSubData(ssbo_f, 0, frame_size, updated_particles);
 
         if(export_frame(settings, updated_particles, out) == -1) {
             ERROR(ERR_EXPORT_FRAME(i), -1);

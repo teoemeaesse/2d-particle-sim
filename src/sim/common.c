@@ -10,6 +10,7 @@ const char * VALID_INVOCATIONS_KEYS[16] = {"INVOCATIONS"};
 const char * VALID_N_KEYS[16] = {"N", "PARTICLES", "COUNT", "PARTICLE_COUNT"};
 const char * VALID_PARTICLE_SIZE_KEYS[32] = {"PARTICLE_SIZE", "PARTICLE_ATTRIBUTES"};
 const char * VALID_WORK_GROUPS_KEYS[16] = {"WORK_GROUPS"};
+const char * VALID_FRAMES_KEYS[16] = {"FRAMES", "STATES", "ITERATIONS"};
 
 int is_integer(char * str) {
     while(*str != '\0')

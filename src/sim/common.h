@@ -31,10 +31,9 @@ enum parser_state {PARSING_NONE, PARSING_KEY, PARSING_NUMBER, PARSING_STRING, PA
 #define LOG_INFO_DONE(F) printf("\n[frame]: Finished exporting simulation to \"%s\"!\n", F);
 #define LOG_INFO_SETTINGS(S) printf("[settings]: n = %d\n[settings]: t = %d\n", S->n, S->frames);
 #define LOG_ERROR_GL(E) printf("[opengl]: Error code %d\n", E);
+#define LOG_UNRECOGNIZED_CONFIG_KEY(T) printf("[log]: Unrecognized symbol (%s) in config file.\n", T);
 
 #define THREAD_COUNT 16
-#define PARTICLE_SIZE 5 * sizeof(float)
-#define PARTICLE_CALLOC(S) (float *) calloc(S, PARTICLE_SIZE)
 #define GRAVITATIONAL_CONSTANT 0.00001f
 
 #define DEFAULT_PARTICLE_ATTR_COUNT 5
@@ -49,12 +48,14 @@ enum parser_state {PARSING_NONE, PARSING_KEY, PARSING_NUMBER, PARSING_STRING, PA
 #define VALID_N_KEYS_SIZE 4
 #define VALID_PARTICLE_SIZE_KEYS_SIZE 2
 #define VALID_WORK_GROUPS_KEYS_SIZE 1
+#define VALID_FRAMES_KEYS_SIZE 3
 
 extern const char * VALID_G_KEYS[16];
 extern const char * VALID_INVOCATIONS_KEYS[16];
 extern const char * VALID_N_KEYS[16];
 extern const char * VALID_PARTICLE_SIZE_KEYS[32];
 extern const char * VALID_WORK_GROUPS_KEYS[16];
+extern const char * VALID_FRAMES_KEYS[16];
 
 // Returns whether a null terminated string represents an integer
 int is_integer(char * str);

@@ -20,7 +20,10 @@ uniform float g;
 int INVOCATION_TOTAL = work_groups * INVOCATIONS;
 
 void main() {
-    int64_t k = int64_t(gl_GlobalInvocationID.x);
+    uint WorkGroupIndex = uint(dot(gl_WorkGroupID, uvec3(1, gl_NumWorkGroups.x, gl_NumWorkGroups.x * gl_NumWorkGroups.y)));
+    uint UniqueIndex = (WorkGroupIndex * gl_WorkGroupSize.x * gl_WorkGroupSize.y * gl_WorkGroupSize.z) + gl_LocalInvocationIndex;
+
+    int64_t k = int64_t(UniqueIndex);
 
     int64_t start, end;
     int64_t remainder = int64_t(n - (INVOCATION_TOTAL * int64_t(n / INVOCATION_TOTAL))),

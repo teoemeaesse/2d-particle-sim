@@ -48,7 +48,7 @@ char * inject_invocations(char * file, settings_t * config) {
     return v_src;
 }
 
-settings_t * default_config() {
+settings_t * default_settings() {
     settings_t * config = (settings_t *) malloc(sizeof(settings_t));
 
     config->filename = NULL;
@@ -80,7 +80,12 @@ int assign_config_field(char * key, char * value, enum value_type valid_value, s
     if(str_in_arr(key, VALID_WORK_GROUPS_KEYS, VALID_WORK_GROUPS_KEYS_SIZE))
         return parse_integer(&config->work_groups, key, value, VALUE_INT);
 
-    return -1;
+    if(str_in_arr(key, VALID_FRAMES_KEYS, VALID_FRAMES_KEYS_SIZE))
+        return parse_integer(&config->frames, key, value, VALUE_INT);
+    
+    LOG_UNRECOGNIZED_CONFIG_KEY(key);
+
+    return 0;
 }
 
 settings_t * parse_config(char * filename) {

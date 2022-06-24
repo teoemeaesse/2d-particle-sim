@@ -10,10 +10,10 @@ float uniform_mass_initializer() {
     return (float) rand() / RAND_MAX * 5.0f;
 }
 
-float * initialize_particles(int n, void (* initialize_positions)(float *, int, float,float (* initialize_mass)()), float (* initialize_mass)()) {
-    float * particles = PARTICLE_CALLOC(n);
+float * initialize_particles(settings_t * settings, void (* initialize_positions)(float *, int, float,float (* initialize_mass)()), float (* initialize_mass)()) {
+    float * particles = (float *) calloc(settings->n, settings->particle_attr_c * sizeof(float));
 
-    initialize_positions(particles, n, 250.0f, initialize_mass);
+    initialize_positions(particles, settings->n, 250.0f, initialize_mass);
 
     return particles;
 }
