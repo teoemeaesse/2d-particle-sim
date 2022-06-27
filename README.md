@@ -9,5 +9,5 @@ To compile and run you need the following:
 
 ## Compile && Run
 Do `make` in each the sim/ subdirectory to compile the simulator or in the player/ subdirectory to compile the simulation player.
-- sim: `./simulator [filename] [particle_count] [frames]`
-- player: `./player [output file] [config file]`
+- simulator mode: `./main -s [output file] [config file]`
+- player mode: `./main -p [input file] [framerate]`

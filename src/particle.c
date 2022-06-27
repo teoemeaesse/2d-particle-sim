@@ -1,10 +1,10 @@
-#include "particle.h"
-#include "common.h"
-
 #include <math.h>
 #include <stdlib.h>
-
 #include <stdio.h>
+
+#include "particle.h"
+#include "common.h"
+#include "settings.h"
 
 float uniform_mass_initializer() {
     return (float) rand() / RAND_MAX * 5.0f;

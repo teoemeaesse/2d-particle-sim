@@ -1,13 +1,11 @@
 #include <GLFW/glfw3.h>
-
-#include "compute.h"
-#include "particle.h"
-#include "io.h"
-#include "common.h"
-
-#include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+
+#include "simulator.h"
+#include "particle.h"
+#include "common.h"
+#include "shader.h"
 
 int export_frame(settings_t * settings, float * particles, FILE * out) {
     if(fwrite(particles, settings->particle_attr_c * sizeof(float), settings->n, out) != settings->n) {
@@ -18,43 +16,6 @@ int export_frame(settings_t * settings, float * particles, FILE * out) {
     return 0;
 }
 
-unsigned int compile_shader(const char * src, unsigned int type) {
-    unsigned int id = glCreateShader(type);
-    
-    glShaderSource(id, 1, &src, NULL);
-    glCompileShader(id);
-
-    int result;
-    glGetShaderiv(id, GL_COMPILE_STATUS, &result);
-    if(!result) {
-        int length;
-        glGetShaderiv(id, GL_INFO_LOG_LENGTH, &length);
-
-        char * message = (char *) malloc(length * sizeof(char));
-        glGetShaderInfoLog(id, length, &length, message);
-        LOG(message);
-        free(message);
-        
-        glDeleteShader(id);
-
-        ERROR(ERR_SHADER_COMPILE(type), 0);
-    }
-
-    return id;
-}
-
-void gl_clear_errors() {
-    unsigned int error;
-    while(error = glGetError());
-}
-
-void gl_check_error() {
-    unsigned int error;
-    while((error = glGetError())) {
-        LOG_ERROR_GL(error);
-    }
-}
-
 int start_sim(settings_t * settings, FILE * out) {
     char * src = read_file_as_string("shaders/newtonian_gravity.comp");
     char * v_src = inject_invocations(src, settings);
@@ -63,7 +24,7 @@ int start_sim(settings_t * settings, FILE * out) {
     free(v_src);
     unsigned int compute_program = glCreateProgram();
     glAttachShader(compute_program, compute_shader);
-    glLinkProgram(compute_program);
+    link_program(compute_program);
 
     unsigned int ssbo_i, ssbo_f, loc_i, loc_f;
     glGenBuffers(1, &ssbo_i);
@@ -83,18 +44,10 @@ int start_sim(settings_t * settings, FILE * out) {
 
     glNamedBufferData(ssbo_f, frame_size, particles, GL_DYNAMIC_DRAW);
 
-    int workGroupSizes[3] = { 0 };
-    glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 0, &workGroupSizes[0]);
-    glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 1, &workGroupSizes[1]);
-    glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 2, &workGroupSizes[2]);
-    int workGroupCounts[3] = { 0 };
-    glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 0, &workGroupCounts[0]);
-    glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 1, &workGroupCounts[1]);
-    glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 2, &workGroupCounts[2]);
-
-    printf("Sizes: ( %d ; %d ; %d )\nCounts: ( %d ; %d ; %d )\n", workGroupSizes[0], workGroupSizes[1], workGroupSizes[2], workGroupCounts[0], workGroupCounts[1], workGroupCounts[2]);
+    log_wg_sizes();
 
     glUseProgram(compute_program);
+    
     glNamedBufferData(ssbo_i, frame_size, particles, GL_DYNAMIC_DRAW);
     
     glUniform1i(glGetUniformLocation(compute_program, "n"), settings->n);
@@ -134,4 +87,20 @@ int start_sim(settings_t * settings, FILE * out) {
     free(updated_particles);
     
     return 0;
+}
+
+int simulate(int argc, char * argv[], window_t * w) {
+    settings_t * settings = read_settings(argc, argv);
+    if(settings == NULL) return EXIT_FAILURE;
+
+    FILE * out = init_output_file(settings);
+    if(out == NULL) return EXIT_FAILURE;
+
+    glfwWindowHint(GLFW_VISIBLE, 0);
+    glfwMakeContextCurrent(w->handle);
+    start_sim(settings, out);
+
+    free_io(settings, out);
+    
+    return EXIT_SUCCESS;
 }

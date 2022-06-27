@@ -1,8 +1,23 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <string.h>
 
 #include "common.h"
+
+const char * VALID_G_KEYS[16] = {"G", "GRAVITY"};
+const char * VALID_INVOCATIONS_KEYS[16] = {"INVOCATIONS"};
+const char * VALID_N_KEYS[16] = {"N", "PARTICLES", "COUNT", "PARTICLE_COUNT"};
+const char * VALID_PARTICLE_SIZE_KEYS[32] = {"PARTICLE_SIZE", "PARTICLE_ATTRIBUTES"};
+const char * VALID_WORK_GROUPS_KEYS[16] = {"WORK_GROUPS"};
+const char * VALID_FRAMES_KEYS[16] = {"FRAMES", "STATES", "ITERATIONS"};
+
+int is_integer(char * str) {
+    while(*str != '\0')
+        if(!isdigit(*(str++)))
+            return 0;
+    return 1;
+}
 
 char * read_file_as_string(const char * file) {
     char * buffer = NULL;
@@ -49,9 +64,15 @@ char * read_file_as_string(const char * file) {
     return buffer;
 }
 
-int is_integer(char * str) {
-    while(*str != '\0')
-        if(!isdigit(*(str++)))
-            return 0;
-    return 1;
+void str_to_upper(char * str) {
+    for(int i = 0; i < strlen(str); i++)
+        str[i] = toupper(str[i]);
+}
+
+int str_in_arr(char * str, const char ** arr, int size) {
+    for(int i = 0; i < size; i++)
+        if(strcmp(str, arr[i]) == 0)
+            return 1;
+    
+    return 0;
 }
