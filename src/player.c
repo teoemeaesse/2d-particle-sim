@@ -39,8 +39,7 @@ void update(simulation_t * sim) {
     if(keyboard->f_down) {sim->frame = 0;};
 
     float delta[2] = {dx, dy};
-    //pan_camera(delta);
-    printf("frame: %d\n", sim->frame);
+    pan_camera(delta);
 
     if(keyboard->space_down) sim->paused = 1 - sim->paused;
 }
@@ -59,7 +58,7 @@ void render(unsigned int render_shader, simulation_t * sim) {
     const float u_zoom = normalize_zoom(camera->zoom);
     glUniform1f(glGetUniformLocation(render_shader, "zoom"), u_zoom);
 
-    glBufferData(GL_ARRAY_BUFFER, 5 * sim->settings->n * sizeof(float), sim->particles + sim->settings->n * sim->frame, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sim->settings->n * sim->settings->particle_attr_c * sizeof(float), sim->particles + sim->settings->n * sim->frame, GL_DYNAMIC_DRAW);
     glDrawArrays(GL_POINTS, 0, sim->settings->n);
 
     glfwSwapBuffers(window->handle);

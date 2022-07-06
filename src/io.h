@@ -12,7 +12,7 @@ typedef struct {
 } simulation_t;
 
 typedef struct {
-    int w_down, a_down, s_down, d_down, r_down, f_down, space_down, lshift_down;
+    int w_down, a_down, s_down, d_down, r_down, f_down, space_down, lshift_down, plus_down, minus_down;
 } keyboard_t;
 
 typedef struct {

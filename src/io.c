@@ -7,8 +7,8 @@
 #include "io.h"
 #include "common.h"
 
-keyboard_t keyboard;
-camera_t camera;
+keyboard_t keyboard = { 0 };
+camera_t camera = {{0.0f, 0.0f}, 1.0f};
 
 FILE * open_file(char * filename, const char * mode) {
     FILE * fp = fopen(filename, mode);
@@ -138,6 +138,10 @@ void handle_keyboard(GLFWwindow * window, int key, int scancode, int action, int
             keyboard.space_down = action;
         if(key == GLFW_KEY_LEFT_SHIFT)
             keyboard.lshift_down = action;
+        if(key == GLFW_KEY_KP_ADD)
+            keyboard.plus_down = action;
+        if(key == GLFW_KEY_KP_SUBTRACT)
+            keyboard.minus_down = action;
     }
 }
 
